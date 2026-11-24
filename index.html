@@ -651,16 +651,25 @@ frame();
 const $id=id=>document.getElementById(id);
 const GH_PAGES='https://muzbox1973.github.io/osm-real-buildings-3d-town/';
 const qs=new URLSearchParams(location.search),qAddr=(qs.get('addr')||'').trim(),qR=[2,5,10,15,20].includes(+qs.get('r'))?+qs.get('r'):2;
-const loadUI={on(){$id('load').classList.add('on');},t(m){$id('loadS').textContent=m;},p(f){$id('loadBar').style.width=Math.round(f*100)+'%';},err(m){$id('loadE').textContent=m;}};
+const loadUI={on(){$id('load').classList.add('on');},t(m){$id('loadS').textContent=m;},p(f){$id('loadBar').style.width=Math.round(f*100)+'%';},err(m){const e=$id('loadE');e.style.color='';e.textContent=m;}};
 const NOMI='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=kr&accept-language=ko&q=';
-const OVP=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+const OVP=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function geocode(q){const r=await fetch(NOMI+encodeURIComponent(q));if(!r.ok)throw new Error('주소 검색 서버 응답 오류 ('+r.status+')');
   const j=await r.json();if(!j.length)throw new Error('주소를 찾지 못했습니다: '+q);
   return{lat:+j[0].lat,lon:+j[0].lon,name:j[0].name||j[0].display_name.split(',')[0],full:j[0].display_name};}
-async function overpass(q){let last='';for(let round=0;round<3;round++){for(const u of OVP){try{const r=await fetch(u,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'}});
-      if(r.ok)return await r.json();last='HTTP '+r.status;}catch(e){last=e.message;}}await sleep(4000*(round+1));}
-  throw new Error('지도 서버(Overpass)가 응답하지 않습니다 ('+last+'). 잠시 후 다시 시도해 주세요.');}
+async function ovp1(u,q,ms,outer){const ac=new AbortController();const tm=setTimeout(()=>ac.abort(),ms);const off=()=>ac.abort();outer.addEventListener('abort',off);
+  try{const r=await fetch(u,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ac.signal});
+    if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.remark&&/runtime error|timed out|out of memory/i.test(j.remark)&&!(j.elements&&j.elements.length))throw new Error('서버 처리 시간 초과');return j;}
+  catch(e){throw new Error(u.split('/')[2]+': '+(ac.signal.aborted?'응답 없음':e.message));}finally{clearTimeout(tm);outer.removeEventListener('abort',off);}}
+async function overpass(q){let last='';const note=m=>{const e=$id('loadE');if(e){e.style.color='#9aa';e.textContent=m;}};
+  for(let round=0;round<4;round++){const outer=new AbortController();const errs=[];
+    try{const j=await new Promise((res,rej)=>{let left=OVP.length;OVP.forEach((u,i)=>setTimeout(()=>{if(outer.signal.aborted)return;
+        ovp1(u,q,90000,outer.signal).then(res,e=>{errs.push(e.message);if(--left===0)rej(new Error(errs.join(' / ')));});},i*2500));});
+      outer.abort();note('');return j;}
+    catch(e){last=e.message;outer.abort();}
+    if(round<3){const w=5*(round+1);note('지도 서버가 혼잡합니다. '+w+'초 후 다시 시도합니다 ('+(round+2)+'/4)');await sleep(w*1000);}}
+  throw new Error('지도 서버(Overpass)가 모두 응답하지 않습니다 ('+last+'). 잠시 후 다시 시도해 주세요.');}
 const HW_ALL='motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link';
 const HW_MID='motorway|trunk|primary|secondary|tertiary|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link';
 const HW_BIG='motorway|trunk|primary|secondary|motorway_link|trunk_link|primary_link|secondary_link';
@@ -673,7 +682,7 @@ function oQuery(bb,lv){const S=[`way["highway"~"^(${lv<=1?HW_ALL:lv===2?HW_MID:H
     'way["natural"~"^(wood|water|scrub|grassland)$"]','relation["natural"~"^(water|wood)$"]','relation["landuse"~"^(forest|residential)$"]','way["waterway"="riverbank"]',
     'way["amenity"~"^(school|university|hospital|parking|college|kindergarten)$"]');
   if(lv<=1)S.push('node["highway"="traffic_signals"]');
-  return `[out:json][timeout:180][maxsize:1073741824];(${S.map(x=>x+'('+bb+');').join('')});out geom qt;`;}
+  return `[out:json][timeout:120];(${S.map(x=>x+'('+bb+');').join('')});out geom qt;`;}
 function dpL(pts,t){if(pts.length<3)return pts;let dm=0,ix=0;const a=pts[0],b=pts[pts.length-1];for(let i=1;i<pts.length-1;i++){const p=pts[i],vx=b[0]-a[0],vy=b[1]-a[1],L=Math.hypot(vx,vy)||1,d=Math.abs(vx*(a[1]-p[1])-vy*(a[0]-p[0]))/L;if(d>dm){dm=d;ix=i;}}
   return dm>t?dpL(pts.slice(0,ix+1),t).slice(0,-1).concat(dpL(pts.slice(ix),t)):[a,b];}
 const areaF=f=>{let s=0;for(let i=0;i<f.length;i+=2){const j=(i+2)%f.length;s+=f[i]*f[j+1]-f[j]*f[i+1];}return Math.abs(s/2);};
