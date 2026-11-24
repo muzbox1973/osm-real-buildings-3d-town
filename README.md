@@ -6,7 +6,7 @@
 설치 없이 `index.html` 하나로 돌아가며(Three.js), 주소만 넣으면 **반경 2 · 5 · 10 · 15 · 20 km** 동네를 바로 만들어 줍니다.
 
 - 데모(웹 버전): https://muzbox1973.github.io/osm-real-buildings-3d-town/
-- 주소 모드 예: `https://muzbox1973.github.io/osm-real-buildings-3d-town/?addr=천안시청&r=5`
+- 주소 모드 예: `https://muzbox1973.github.io/osm-real-buildings-3d-town/?addr=롯데월드타워&r=5`
 
 ![전체 보기](docs/screenshots/overview.png)
 
@@ -36,8 +36,8 @@
 | ![후방](docs/screenshots/drive-chase.png) | ![실내](docs/screenshots/drive-cockpit.png) |
 | **탑뷰(내비게이션식)** | **신호 대기** |
 | ![탑뷰](docs/screenshots/drive-top.png) | ![신호 대기](docs/screenshots/signal-wait.png) |
-| **밤 풍경** | **주소 모드 (천안시청, 2 km)** |
-| ![밤](docs/screenshots/night.png) | ![주소 모드 · 천안시청 2 km](docs/screenshots/address-cheonan-cityhall.jpg) |
+| **밤 풍경** | **주소 모드 (롯데월드타워, 5 km)** |
+| ![밤](docs/screenshots/night.png) | ![주소 모드 · 롯데월드타워 5 km](docs/screenshots/address-lotteworldtower-5km.jpg) |
 
 ---
 
@@ -99,7 +99,7 @@ URL로 바로 열 수도 있습니다: `?addr=주소&r=반경(km)`
 git clone https://github.com/muzbox1973/osm-real-buildings-3d-town.git
 cd osm-real-buildings-3d-town
 python -m http.server 8000
-# 브라우저에서 http://localhost:8000/  또는  http://localhost:8000/?addr=천안시청&r=2
+# 브라우저에서 http://localhost:8000/  또는  http://localhost:8000/?addr=롯데월드타워&r=5
 ```
 
 ### 청당동 차로 수 다시 만들기 (선택)
@@ -157,7 +157,7 @@ docs/screenshots/          README 스크린샷
 **OSM Real Buildings 3D Town** turns real map data into a 3D neighborhood you can drive through — with **autonomous driving, turn-by-turn navigation and traffic lights**. It is a single `index.html` (Three.js, no build step). Enter any address and pick a radius of **2 · 5 · 10 · 15 · 20 km** to generate that area.
 
 - Live demo: https://muzbox1973.github.io/osm-real-buildings-3d-town/
-- Address mode: `?addr=<address>&r=<km>` e.g. `?addr=Seoul City Hall&r=5`
+- Address mode: `?addr=<address>&r=<km>` e.g. `?addr=Lotte World Tower&r=5`
 
 ### Features
 - **Real footprints** from OpenStreetMap; heights from `building:levels`/`height`, otherwise per-type defaults. The bundled Cheongdang-dong (Cheonan, Korea) sample uses floor counts verified from sales notices and listings.
