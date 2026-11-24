@@ -819,6 +819,7 @@ if(OSM){document.querySelector('.card h1').textContent='우리 동네 3D · '+(D
   document.querySelector('.card p').textContent=`OpenStreetMap 실시간 데이터로 반경 ${RAD/1000} km를 만들었습니다. 층수·차로 수는 OSM에 있는 값을 쓰고, 없으면 건물·도로 종류별 추정값입니다.`+(RAD>5000?' 반경이 커서 큰 건물과 주요 도로만 불러왔습니다.':'');
   $('credit').innerHTML='지도 데이터 © OpenStreetMap 기여자 (ODbL) · <a href="?preset" style="color:#2f7bff">천안 청당동 예시 보기</a>';$('loadBar').style.width='100%';}
 document.getElementById('load').classList.remove('on');
+window.town3d={camera,controls,view,home,setXray,setNight,setView,startRouteAt,ego,get simT(){return simT}};
 frame();
 }
 /* ===== 주소 → 반경 2·5·10·15·20 km 불러오기 (Nominatim + Overpass) ===== */
@@ -969,7 +970,7 @@ async function loadTilesData(ctx,ui,sig){const{lat0,lon0,KX,KZ,R,lv,tol}=ctx,UI=
           const fl=pts.flat().map(r1);if(areaF(fl)<(lv>=2?3000:300))continue;A.push([k,f.props.name||'',fl]);}}}
     for(const f of L.poi||[]){const P=f.props;if(!P.name||!f.geom[0]||!inT(f.geom[0][0],f.ext))continue;const[x,zz]=loc(f.geom[0][0],f.ext);if(x*x+zz*zz>R*R)continue;
       if(P.class==='railway'&&/^(subway|station|halt|train_station|light_rail|monorail|tram_stop)$/.test(P.subclass||'')){if(P.subclass!=='tram_stop')ST.push([P.name.replace(/\s*\(.*\)$/,''),r1(x),r1(zz),P.subclass==='subway'?'subway':'train']);continue;}
-      if(TLABEL.test(P.class||'')&&(P.rank||9)<=3)PL.push([P.name,r1(x),r1(zz),(5-(P.rank||3))*9000]);}
+      if(TLABEL.test(P.class||'')&&(P.rank||9)<=3&&!/(의원|치과|약국|쉼터|센터점|지점|\d+호점)$/.test(P.name)&&!(P.class==='shop'&&!/(백화점|몰|마트|시장)/.test(P.name)))PL.push([P.name,r1(x),r1(zz),(5-(P.rank||3))*9000]);}
     for(const f of L.place||[]){const P=f.props;if(!P.name||!f.geom[0]||!inT(f.geom[0][0],f.ext)||!/^(suburb|neighbourhood|quarter)$/.test(P.class))continue;const[x,zz]=loc(f.geom[0][0],f.ext);if(x*x+zz*zz<R*R)PL.push([P.name,r1(x),r1(zz),P.class==='suburb'?60000:30000]);}};
   let next=0,fail=0;const worker=async()=>{while(next<jobs.length){const[x,y]=jobs[next++];let ok=false;
       for(let k=0;k<3&&!ok;k++){try{const r=await fetchT(url.replace('{z}',z).replace('{x}',x).replace('{y}',y),20000,sig);conv(mvtDecode(await r.arrayBuffer()),x,y);ok=true;}catch(e){if(sig&&sig.aborted)throw e;await sleep(800*(k+1));}}
