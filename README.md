@@ -36,8 +36,8 @@
 | ![후방](docs/screenshots/drive-chase.png) | ![실내](docs/screenshots/drive-cockpit.png) |
 | **탑뷰(내비게이션식)** | **신호 대기** |
 | ![탑뷰](docs/screenshots/drive-top.png) | ![신호 대기](docs/screenshots/signal-wait.png) |
-| **밤 풍경** | |
-| ![밤](docs/screenshots/night.png) | |
+| **밤 풍경** | **주소 모드 (천안시청, 2 km)** |
+| ![밤](docs/screenshots/night.png) | ![주소 모드 · 천안시청 2 km](docs/screenshots/address-cheonan-cityhall.jpg) |
 
 ---
 
@@ -66,6 +66,8 @@ URL로 바로 열 수도 있습니다: `?addr=주소&r=반경(km)`
 | 10 km | 큰 건물(아파트·상업·공업·학교·병원 등) + 3차로급 이상 도로 | 신호는 중심 3 km만 |
 | 15 km | 위와 같음, 도로는 2차로급(secondary) 이상 | 3×3 타일 |
 | 20 km | 위와 같음 | 4×4 타일, 받는 데 몇 분 걸릴 수 있음 |
+
+> 공용 Overpass 서버가 붐비면 4개 미러(overpass-api.de · private.coffee · kumi.systems · mail.ru)에 차례로 요청을 보내 먼저 오는 응답을 씁니다. 요청마다 90초 제한이 있고, 모두 실패하면 최대 4번까지 다시 시도합니다. 2 km는 보통 1분 안에 끝납니다.
 
 > **주의**: Claude 아티팩트 화면에서는 보안 정책 때문에 외부 지도 서버에 접속할 수 없어 주소 모드가 동작하지 않습니다. 이때는 화면에 나오는 링크로 웹 버전(GitHub Pages)이나 로컬 서버에서 여세요.
 
@@ -173,6 +175,8 @@ docs/screenshots/          README 스크린샷
 | 5 km | same, fetched as 2×2 tiles (shadows off) |
 | 10 km | large buildings (apartments, commercial, industrial, schools, hospitals…) + tertiary and above |
 | 15 / 20 km | large buildings + secondary and above, 3×3 / 4×4 tiles |
+
+> If the public Overpass servers are busy, requests go to four mirrors with staggered starts and the first answer wins (90 s per request, up to 4 rounds). A 2 km area usually loads within a minute.
 
 > Address mode needs network access to Nominatim and Overpass. It does not work inside a Claude artifact (blocked by its content security policy); use the GitHub Pages version or a local web server.
 
