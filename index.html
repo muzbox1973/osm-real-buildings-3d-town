@@ -341,14 +341,18 @@ function commTower(x,z,h){const H=Math.max(60,h),m=new THREE.MeshLambertMaterial
   c(9,11,H*.05,0);c(4.2,6.5,H*.5,H*.05);c(12,9,H*.05,H*.55);c(12.5,12.5,H*.06,H*.6);c(9,12,H*.03,H*.66);c(3.2,3.6,H*.12,H*.69);c(.4,2.2,H*.19,H*.81,10);
   const mesh=new THREE.Mesh(merge(g),m);mesh.position.set(x,0,z);mesh.castShadow=SHADOW;scene.add(mesh);BL.push(mesh);
   const ring=new THREE.Mesh(new THREE.CylinderGeometry(12.6,12.6,H*.04,24,1,true),new THREE.MeshLambertMaterial({color:0x6d8aa0,emissive:0xffd9a0,emissiveIntensity:0}));ring.position.set(x,H*.62+H*.02,z);scene.add(ring);lmMats.push(ring.material);}
-const LANDMARKS=[{re:/롯데\s*월드\s*타워|lotte\s*world\s*tower/i,make:lotteTower}];
+const LANDMARKS=[{re:/롯데\s*월드\s*타워|lotte\s*world\s*tower/i,ll:[37.51253,127.10251],make:lotteTower}];
 const HIDE=new Set(),LMK=[];
 if(OSM){const pg=Grid(80),parts=[];for(const b of B)if(b[8]){const F=footFrame(b[3]);parts.push([F.cx,F.cz,b]);pg.add([F.cx,F.cx,F.cz,F.cz],parts[parts.length-1]);}
   const inParts=(f,fn)=>{const bb=bbox(f);for(let x=bb[0];x<=bb[1]+80;x+=80)for(let z=bb[2];z<=bb[3]+80;z+=80)for(const p of pg.at(Math.min(x,bb[1]),Math.min(z,bb[3])))if(pip(p[0],p[1],f))fn(p[2]);};
   for(const b of B){if(b[8])continue;const lm=LANDMARKS.find(l=>l.re.test(b[2]||''));
     if(lm&&areaOf(b[3])>600){HIDE.add(b);inParts(b[3],p=>HIDE.add(p));LMK.push([lm,b]);continue;}
     let has=false;inParts(b[3],()=>has=true);if(has)HIDE.add(b);}
-  if(!LMK.length)for(const b of B)if(b[8]&&LANDMARKS.some(l=>l.re.test(b[2]||''))&&(b[4]||0)>200){const lm=LANDMARKS.find(l=>l.re.test(b[2]));HIDE.add(b);LMK.push([lm,b]);break;}}
+  if(!LMK.length)for(const b of B)if(b[8]&&LANDMARKS.some(l=>l.re.test(b[2]||''))&&(b[4]||0)>200){const lm=LANDMARKS.find(l=>l.re.test(b[2]));HIDE.add(b);LMK.push([lm,b]);break;}
+  /* 이름이 없는 타일 데이터: 위치(위경도)와 높이로 랜드마크 찾기 */
+  if(D.lat0)for(const lm of LANDMARKS){if(!lm.ll||LMK.some(q=>q[0]===lm))continue;const kx=111320*Math.cos(D.lat0*Math.PI/180),px=(lm.ll[1]-D.lon0)*kx,pz=(D.lat0-lm.ll[0])*110950;
+    const near=B.filter(b=>{const F=footFrame(b[3]);return Math.hypot(F.cx-px,F.cz-pz)<55&&(b[4]||0)>60;});if(!near.some(b=>(b[4]||0)>300))continue;
+    near.forEach(b=>HIDE.add(b));const base=near.filter(b=>!(b[5]>0)).sort((a,b)=>areaOf(b[3])-areaOf(a[3]))[0]||near[0];LMK.push([lm,base]);}}
 for(const bE of B){const[t,lv,name,f]=bE;const bb=bbox(f),cx=(bb[0]+bb[1])/2,cz=(bb[2]+bb[3])/2,ar=areaOf(f);bBoxes.push(bb);bGrid.add([bb[0]-3,bb[1]+3,bb[2]-3,bb[3]+3],bb);if(HIDE.has(bE))continue;
   let fl=lv,side=pick(cc),roof=roofM;
   if(OSM){fl=osmFloors(t,lv,ar);side=colorHex(bE[7],pick(OCOL[t]||cc));const rc=colorHex(bE[10],0);roof=rc?roofOf(rc):OROOF[t]?roofOf(pick(OROOF[t])):roofM;
@@ -535,6 +539,7 @@ const LB=[['청수버들마을우미린',-600,-370,92],['청수한양수자인',
  ['하나로마트',-75,-222,18],['천안우리병원',130,-50,30],['청당동 주택가',650,-330,22,'g'],['남부대로 지하차도',-170,-146,14,'u'],['남부대로',600,-110,10,'g'],['천안대로',955,60,10,'g']];
 if(OSM){LB.length=0;const seen=new Set(),cands=[];
   for(const[k,n,f]of A){if(!n||!['residential','school','park','hospital','commercial'].includes(k))continue;const b=bbox(f);cands.push([n,(b[0]+b[1])/2,(b[2]+b[3])/2,k==='residential'?60:28,k==='park'?'g':'',areaOf(f)]);}
+  for(const[n,x,z,w]of(D.PL||[]))cands.push([n,x,z,30,'',w]);
   for(const[t,lv,n,f]of B){if(!n||/^\d+$/.test(n)||(!lv&&!['s','h','g'].includes(t)))continue;const b=bbox(f);cands.push([n,(b[0]+b[1])/2,(b[2]+b[3])/2,30,'',areaOf(f)]);}
   const gap=Math.max(140,RAD/12);cands.sort((a,b)=>b[5]/(1+Math.hypot(b[1],b[2])/600)-a[5]/(1+Math.hypot(a[1],a[2])/600));
   for(const c of cands){if(LB.length>=24||seen.has(c[0])||Math.hypot(c[1],c[2])>RAD)continue;if(LB.some(l=>Math.hypot(l[1]-c[1],l[2]-c[2])<gap))continue;seen.add(c[0]);LB.push(c.slice(0,5));}
@@ -831,8 +836,8 @@ async function ovp1(u,q,ms,outer){const ac=new AbortController();const tm=setTim
   try{const r=await fetch(u,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ac.signal});
     if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.remark&&/runtime error|timed out|out of memory/i.test(j.remark)&&!(j.elements&&j.elements.length))throw new Error('서버 처리 시간 초과');return j;}
   catch(e){throw new Error(u.split('/')[2]+': '+(ac.signal.aborted?'응답 없음':e.message));}finally{clearTimeout(tm);outer.removeEventListener('abort',off);}}
-async function overpass(q){let last='';const note=m=>{const e=$id('loadE');if(e){e.style.color='#9aa';e.textContent=m;}};
-  for(let round=0;round<4;round++){const outer=new AbortController();const errs=[];
+async function overpass(q,opt={}){let last='';const note=m=>{if(opt.quiet)return;const e=$id('loadE');if(e){e.style.color='#9aa';e.textContent=m;}};
+  for(let round=0;round<4;round++){if(opt.sig&&opt.sig.aborted)throw new Error('중단됨');const outer=new AbortController();const errs=[];if(opt.sig)opt.sig.addEventListener('abort',()=>outer.abort());
     try{const j=await new Promise((res,rej)=>{let left=OVP.length;OVP.forEach((u,i)=>setTimeout(()=>{if(outer.signal.aborted)return;
         ovp1(u,q,90000,outer.signal).then(res,e=>{errs.push(e.message);if(--left===0)rej(new Error(errs.join(' / ')));});},i*2500));});
       outer.abort();note('');return j;}
@@ -865,9 +870,8 @@ function areaKind(t){if(t.leisure==='park'||t.leisure==='garden'||t.landuse==='r
   if(/^(grass|meadow|cemetery)$/.test(t.landuse||'')||/^(scrub|grassland)$/.test(t.natural||''))return'grass';if(t.landuse==='farmland')return'farmland';
   if(t.landuse==='residential')return'residential';if(t.landuse==='construction')return'construction';if(/^(commercial|retail)$/.test(t.landuse||''))return'commercial';
   if(t.landuse==='industrial')return'industrial';if(/^(school|university|college|kindergarten)$/.test(t.amenity||''))return'school';if(t.amenity==='parking')return'parking';if(t.amenity==='hospital')return'hospital';return null;}
-async function loadOSM(addr,R){loadUI.on();{const h=document.querySelector('h1');if(h)h.textContent='우리 동네 3D · '+addr;}loadUI.t('주소를 찾고 있습니다');loadUI.p(.03);
-  const g=await geocode(addr),lat0=g.lat,lon0=g.lon,KX=111320*Math.cos(lat0*Math.PI/180),KZ=110950;
-  const dLat=R/KZ,dLon=R/KX,lv=R<=2000?0:R<=5000?1:R<=10000?2:3,n=R<=2000?1:R<=10000?2:R<=15000?3:4,tol=1+R/5000;
+/* Overpass(OSM 원본) 경로: 차로 수·신호등·3D 부품·노선색까지 가장 자세함. ui=false면 화면 표시 없이 뒤에서 받음 */
+async function loadOverpassData(ctx,ui,sig){const{lat0,lon0,KX,KZ,R,dLat,dLon,lv,tol}=ctx,n=R<=2000?1:R<=10000?2:R<=15000?3:4,UI=ui?loadUI:{t(){},p(){}},OQ={sig,quiet:!ui};
   const B=[],H=[],A=[],S=[],RLW=[],ST=[],TW=[],seen=new Set(),P=gm=>gm.map(p=>[(p.lon-lon0)*KX,(lat0-p.lat)*KZ]),r1=a=>Math.round(a*10)/10;
   const inside=pts=>pts.some(([x,z])=>x*x+z*z<R*R*1.02);
   function convert(el){const t=el.tags||{};
@@ -890,17 +894,113 @@ async function loadOSM(addr,R){loadUI.on();{const h=document.querySelector('h1')
     const k=areaKind(t);if(!k)return;if(pts[0][0]===pts.at(-1)[0]&&pts[0][1]===pts.at(-1)[1])pts.pop();pts=dpL(pts,2*tol);if(pts.length<3)return;
     const f=pts.flat().map(r1);if(areaF(f)<(lv>=2?3000:300))return;A.push([k,t.name||'',f]);}
   for(let i=0;i<n;i++)for(let j=0;j<n;j++){const s=lat0-dLat+2*dLat*i/n,nn=lat0-dLat+2*dLat*(i+1)/n,w=lon0-dLon+2*dLon*j/n,e=lon0-dLon+2*dLon*(j+1)/n;
-    loadUI.t(`지도 데이터 받는 중 (${i*n+j+1}/${n*n}) · 건물 ${B.length.toLocaleString()}개`);
-    const js=await overpass(oQuery(`${s},${w},${nn},${e}`,lv));
+    UI.t(`지도 데이터 받는 중 (${i*n+j+1}/${n*n}) · 건물 ${B.length.toLocaleString()}개`);
+    const js=await overpass(oQuery(`${s},${w},${nn},${e}`,lv),OQ);
     for(const el of js.elements){const k=el.type+el.id;if(seen.has(k))continue;seen.add(k);convert(el);}
-    loadUI.p(.05+.75*(i*n+j+1)/(n*n));}
-  if(lv>=2){loadUI.t('신호등 위치 받는 중');try{const js=await overpass(`[out:json][timeout:60];node["highway"="traffic_signals"](around:3000,${lat0},${lon0});out;`);for(const el of js.elements)if(el.type==="node")S.push([(el.lon-lon0)*KX,(lat0-el.lat)*KZ]);}catch(e){}}
-  if(RLW.length){loadUI.t('철도·지하철 노선 정보 받는 중');try{const js=await overpass(`[out:json][timeout:60];rel["route"~"^(subway|light_rail|train|monorail|tram)$"](${lat0-dLat},${lon0-dLon},${lat0+dLat},${lon0+dLon});out body;`);
+    UI.p(.05+.75*(i*n+j+1)/(n*n));}
+  if(lv>=2){UI.t('신호등 위치 받는 중');try{const js=await overpass(`[out:json][timeout:60];node["highway"="traffic_signals"](around:3000,${lat0},${lon0});out;`,OQ);for(const el of js.elements)if(el.type==="node")S.push([(el.lon-lon0)*KX,(lat0-el.lat)*KZ]);}catch(e){}}
+  if(RLW.length){UI.t('철도·지하철 노선 정보 받는 중');try{const js=await overpass(`[out:json][timeout:60];rel["route"~"^(subway|light_rail|train|monorail|tram)$"](${lat0-dLat},${lon0-dLon},${lat0+dLat},${lon0+dLon});out body;`,OQ);
       const cm=new Map();for(const el of js.elements){if(el.type!=='relation'||!el.members)continue;const t=el.tags||{},c=lineColor(t);if(!c)continue;for(const m of el.members)if(m.type==='way'&&!cm.has(m.ref))cm.set(m.ref,c);}
       for(const w of RLW)w[2]=cm.get(w[5])||0;}catch(e){}}
   for(const w of RLW){if(!w[2])w[2]=lineColor({name:w[3]})||0;w.length=5;}
-  loadUI.t(`3D 장면을 만드는 중 · 건물 ${B.length.toLocaleString()}개, 도로 ${H.length.toLocaleString()}개, 철도 ${RLW.length.toLocaleString()}구간`);loadUI.p(.88);await sleep(60);
-  return{osm:1,B,H,A,S,RLW,ST,TW,r:R,place:g.name,full:g.full};}
+  UI.t(`3D 장면을 만드는 중 · 건물 ${B.length.toLocaleString()}개, 도로 ${H.length.toLocaleString()}개, 철도 ${RLW.length.toLocaleString()}구간`);UI.p(.88);await sleep(60);
+  return{B,H,A,S,RLW,ST,TW,src:'overpass'};}
+/* 최소 MVT(Mapbox Vector Tile) 디코더: protobuf → {layer:[{type,props,geom:[[[x,y],...],...],ext}]} */
+function mvtDecode(buf){const b=new Uint8Array(buf);let p=0;
+  const varint=()=>{let r=0,s=0,c;do{c=b[p++];r+=(c&127)*2**s;s+=7;}while(c>=128);return r;};
+  const skip=w=>{if(w===0)varint();else if(w===1)p+=8;else if(w===2){const l=varint();p+=l;}else if(w===5)p+=4;};
+  const str=(e)=>{const l=varint();const s=new TextDecoder().decode(b.subarray(p,p+l));p+=l;return s;};
+  const packed=()=>{const l=varint(),e=p+l,o=[];while(p<e)o.push(varint());return o;};
+  const val=()=>{const l=varint(),e=p+l;let v=null;while(p<e){const k=varint(),f=k>>3,w=k&7;
+      if(f===1)v=str();else if(f===2){v=new DataView(b.buffer,b.byteOffset+p,4).getFloat32(0,true);p+=4;}else if(f===3){v=new DataView(b.buffer,b.byteOffset+p,8).getFloat64(0,true);p+=8;}
+      else if(f===4||f===5)v=varint();else if(f===6){const n=varint();v=(n>>>1)^-(n&1);}else if(f===7)v=!!varint();else skip(w);}return v;};
+  const out={};
+  while(p<b.length){const k=varint(),f=k>>3,w=k&7;if(f!==3){skip(w);continue;}
+    const l=varint(),e=p+l;let name='',ext=4096;const keys=[],vals=[],feats=[];
+    while(p<e){const k2=varint(),f2=k2>>3,w2=k2&7;
+      if(f2===1)name=str();else if(f2===3)keys.push(str());else if(f2===4)vals.push(val());else if(f2===5)ext=varint();
+      else if(f2===2){const l2=varint(),e2=p+l2;let tags=[],type=0,geom=[];while(p<e2){const k3=varint(),f3=k3>>3,w3=k3&7;if(f3===2)tags=packed();else if(f3===3)type=varint();else if(f3===4)geom=packed();else skip(w3);}feats.push({tags,type,geom});}
+      else skip(w2);}
+    out[name]=feats.map(ft=>{const props={};for(let i=0;i<ft.tags.length;i+=2)props[keys[ft.tags[i]]]=vals[ft.tags[i+1]];
+      const rings=[];let x=0,y=0,cur=null,i=0;const g=ft.geom;
+      while(i<g.length){const c=g[i++],id=c&7,cnt=c>>3;
+        if(id===1||id===2){for(let j=0;j<cnt;j++){const dx=(g[i]>>>1)^-(g[i]&1),dy=(g[i+1]>>>1)^-(g[i+1]&1);i+=2;x+=dx;y+=dy;if(id===1){cur=[];rings.push(cur);}cur.push([x,y]);}}
+        else if(id===7){if(cur&&cur.length)cur.push(cur[0]);}}
+      return{type:ft.type,props,geom:rings,ext};});}
+  return out;}
+/* ===== 벡터 타일(OpenFreeMap, OpenMapTiles 스키마) 경로: 빠르고 안정적. 차로 수·신호등은 추정 ===== */
+const TILE_JSON='https://tiles.openfreemap.org/planet';
+async function fetchT(u,ms,sig){const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),ms),off=()=>ac.abort();if(sig)sig.addEventListener('abort',off);
+  try{const r=await fetch(u,{signal:ac.signal});if(!r.ok)throw new Error('HTTP '+r.status);return r;}finally{clearTimeout(tm);if(sig)sig.removeEventListener('abort',off);}}
+function clipLine(pts,E){/* 타일 경계(0..E)로 선 자르기 → 조각 목록 */const out=[];let cur=null;const inb=p=>p[0]>=0&&p[0]<=E&&p[1]>=0&&p[1]<=E;
+  const cut=(a,b)=>{let t0=0,t1=1;const dx=b[0]-a[0],dy=b[1]-a[1];for(const[p,q]of[[-dx,a[0]],[dx,E-a[0]],[-dy,a[1]],[dy,E-a[1]]]){if(p===0){if(q<0)return null;}else{const r=q/p;if(p<0){if(r>t1)return null;if(r>t0)t0=r;}else{if(r<t0)return null;if(r<t1)t1=r;}}}
+    return[[a[0]+dx*t0,a[1]+dy*t0],[a[0]+dx*t1,a[1]+dy*t1],t0>0,t1<1];};
+  for(let i=1;i<pts.length;i++){const c=cut(pts[i-1],pts[i]);if(!c){cur=null;continue;}if(!cur||c[2]){cur=[c[0]];out.push(cur);}cur.push(c[1]);if(c[3])cur=null;}return out.filter(l=>l.length>1);}
+const ringArea=r=>{let s=0;for(let i=0,j=r.length-1;i<r.length;j=i++)s+=(r[j][0]-r[i][0])*(r[j][1]+r[i][1]);return s/2;};
+function polys(rings){/* MVT: 바깥 고리와 구멍 고리를 방향으로 구분 → 바깥 고리 목록 */const o=[];let sg=0;for(const r of rings){const a=ringArea(r);if(!a)continue;if(!sg)sg=Math.sign(a);if(Math.sign(a)===sg)o.push(r);}return o;}
+const TROAD={motorway:'motorway',trunk:'trunk',primary:'primary',secondary:'secondary',tertiary:'tertiary',minor:'residential'};
+const TAREA={wood:'wood',forest:'wood',grass:'grass',meadow:'grass',scrub:'grass',farmland:'farmland',residential:'residential',commercial:'commercial',retail:'commercial',industrial:'industrial',
+  school:'school',university:'school',college:'school',kindergarten:'school',hospital:'hospital',cemetery:'grass',stadium:'pitch',pitch:'pitch',playground:'park',park:'park',garden:'park',
+  recreation_ground:'park',construction:'construction',golf_course:'pitch',parking:'parking'};
+const TLABEL=/^(school|college|hospital|park|attraction|stadium|town_hall|museum|library|university|shop|castle|monument|zoo|theatre|place_of_worship)$/;
+async function loadTilesData(ctx,ui,sig){const{lat0,lon0,KX,KZ,R,lv,tol}=ctx,UI=ui?loadUI:{t(){},p(){}};
+  UI.t('지도 타일 정보 받는 중');const tj=await(await fetchT(TILE_JSON,15000,sig)).json(),url=tj.tiles[0];
+  const z=R<=5000?14:13,N=2**z,tx=lon=>Math.floor((lon+180)/360*N),ty=lat=>Math.floor((1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(lat*Math.PI/180))/Math.PI)/2*N);
+  const dLat=R/KZ,dLon=R/KX,x0=tx(lon0-dLon),x1=tx(lon0+dLon),y0=ty(lat0+dLat),y1=ty(lat0-dLat),jobs=[];
+  for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){/* 원 밖 타일 제외 */const lo=(x+.5)/N*360-180,la=Math.atan(Math.sinh(Math.PI*(1-2*(y+.5)/N)))*180/Math.PI,tw=40075016*Math.cos(lat0*Math.PI/180)/N;
+    if(Math.hypot((lo-lon0)*KX,(lat0-la)*KZ)<R+tw*.75)jobs.push([x,y]);}
+  const B=[],H=[],A=[],RLW=[],ST=[],PL=[],NM=[],r1=a=>Math.round(a*10)/10;let done=0;
+  const conv=(L,X,Y)=>{const loc=(p,E)=>{const lo=(X+p[0]/E)/N*360-180,la=Math.atan(Math.sinh(Math.PI*(1-2*(Y+p[1]/E)/N)))*180/Math.PI;return[(lo-lon0)*KX,(lat0-la)*KZ];};
+    const inT=(p,E)=>p[0]>=0&&p[0]<E&&p[1]>=0&&p[1]<E,inside=pts=>pts.some(([x,z])=>x*x+z*z<R*R*1.02);
+    for(const f of L.building||[]){const P=f.props;if(P.hide_3d)continue;for(const r of polys(f.geom)){let cx=0,cy=0;for(const q of r){cx+=q[0];cy+=q[1];}if(!inT([cx/r.length,cy/r.length],f.ext))continue;
+        let pts=r.map(q=>loc(q,f.ext));if(pts.length>1&&pts[0][0]===pts.at(-1)[0]&&pts[0][1]===pts.at(-1)[1])pts.pop();if(!inside(pts))continue;pts=dpL(pts,.5*tol);if(pts.length<3)continue;
+        const fl=pts.flat().map(r1),ar=areaF(fl),mh=+P.render_min_height||0,hm=+P.render_height>5||mh>0?+P.render_height:0;if(ar<(mh>0?3:lv>=2?150:20))continue;
+        if(lv>=2&&hm<60&&ar<1500)continue;B.push([hm>=25&&mh===0?'a':'y',Math.round(hm/3),'',fl,hm,mh,'',P.colour||'',mh>0?1:0,0,'']);}}
+    for(const f of L.transportation||[]){const P=f.props,c=P.class;let kind=null,road=null;
+      if(c==='rail')kind=P.subclass==='narrow_gauge'?'narrow_gauge':'rail';else if(c==='transit')kind=/^(subway|light_rail|monorail|tram)$/.test(P.subclass)?P.subclass:null;
+      else if(TROAD[c]){road=TROAD[c];if(P.ramp&&road!=='residential')road+='_link';if(lv===2&&road==='residential')road=null;if(lv>=3&&/^(residential|tertiary)/.test(road||''))road=null;}
+      if(!kind&&!road)continue;if(kind&&/^(yard|siding|spur|crossover)$/.test(P.service||''))continue;const flag=P.brunnel==='tunnel'?1:P.brunnel==='bridge'?2:0;
+      for(const g of f.geom)for(const seg of clipLine(g,f.ext)){let pts=seg.map(q=>loc(q,f.ext));if(!inside(pts))continue;
+        if(kind){RLW.push([kind,flag,0,'',dpL(pts,.6*tol).flat().map(r1)]);continue;}
+        let one=P.oneway===1||/^motorway/.test(road);if(P.oneway===-1){pts.reverse();one=true;}pts=dpL(pts,1.2*tol);H.push([road,flag,0,'',pts.flat().map(r1),[0,0],one?1:0,P.expressway?1:0]);}}
+    for(const f of L.transportation_name||[]){const nm=f.props.name;if(!nm||!TROAD[f.props.class])continue;for(const g of f.geom)for(const seg of clipLine(g,f.ext))NM.push([nm,TROAD[f.props.class],seg.map(q=>loc(q,f.ext))]);}
+    for(const lay of['landcover','landuse','park','water']){for(const f of L[lay]||[]){const k=lay==='water'?'water':lay==='park'?'park':TAREA[f.props.subclass]||TAREA[f.props.class];if(!k)continue;
+        for(const r of polys(f.geom)){let pts=r.map(q=>loc(q,f.ext));if(pts.length>1&&pts[0][0]===pts.at(-1)[0]&&pts[0][1]===pts.at(-1)[1])pts.pop();if(!inside(pts))continue;pts=dpL(pts,2*tol);if(pts.length<3)continue;
+          const fl=pts.flat().map(r1);if(areaF(fl)<(lv>=2?3000:300))continue;A.push([k,f.props.name||'',fl]);}}}
+    for(const f of L.poi||[]){const P=f.props;if(!P.name||!f.geom[0]||!inT(f.geom[0][0],f.ext))continue;const[x,zz]=loc(f.geom[0][0],f.ext);if(x*x+zz*zz>R*R)continue;
+      if(P.class==='railway'&&/^(subway|station|halt|train_station|light_rail|monorail|tram_stop)$/.test(P.subclass||'')){if(P.subclass!=='tram_stop')ST.push([P.name.replace(/\s*\(.*\)$/,''),r1(x),r1(zz),P.subclass==='subway'?'subway':'train']);continue;}
+      if(TLABEL.test(P.class||'')&&(P.rank||9)<=3)PL.push([P.name,r1(x),r1(zz),(5-(P.rank||3))*9000]);}
+    for(const f of L.place||[]){const P=f.props;if(!P.name||!f.geom[0]||!inT(f.geom[0][0],f.ext)||!/^(suburb|neighbourhood|quarter)$/.test(P.class))continue;const[x,zz]=loc(f.geom[0][0],f.ext);if(x*x+zz*zz<R*R)PL.push([P.name,r1(x),r1(zz),P.class==='suburb'?60000:30000]);}};
+  let next=0,fail=0;const worker=async()=>{while(next<jobs.length){const[x,y]=jobs[next++];let ok=false;
+      for(let k=0;k<3&&!ok;k++){try{const r=await fetchT(url.replace('{z}',z).replace('{x}',x).replace('{y}',y),20000,sig);conv(mvtDecode(await r.arrayBuffer()),x,y);ok=true;}catch(e){if(sig&&sig.aborted)throw e;await sleep(800*(k+1));}}
+      if(!ok)fail++;done++;UI.t(`지도 타일 받는 중 (${done}/${jobs.length}) · 건물 ${B.length.toLocaleString()}개`);UI.p(.05+.75*done/jobs.length);}};
+  await Promise.all(Array.from({length:6},worker));if(fail>jobs.length*.3)throw new Error('지도 타일 서버 응답 오류 ('+fail+'/'+jobs.length+' 실패)');
+  /* 도로 이름: 같은 등급의 가장 가까운 이름 선 */
+  const ng=new Map(),gk=(x,z)=>Math.floor(x/60)+','+Math.floor(z/60);NM.forEach((m,i)=>m[2].forEach(p=>{const k=gk(p[0],p[1]);let l=ng.get(k);if(!l)ng.set(k,l=[]);l.push(i);}));
+  for(const h of H){const f=h[4],mi=Math.floor(f.length/4)*2,x=f[mi],zz=f[mi+1];let best=null,bd=9;const base=h[0].replace('_link','');
+    for(let gx=-1;gx<=1;gx++)for(let gz=-1;gz<=1;gz++)for(const i of ng.get(gk(x+gx*60,zz+gz*60))||[]){const m=NM[i];if(m[1]!==base)continue;const pp=m[2];for(let j=1;j<pp.length;j++){const d=dSegL(x,zz,pp[j-1],pp[j]);if(d<bd){bd=d;best=m[0];}}}
+    if(best)h[3]=best;}
+  /* 신호등 추정: 간선도로(고속·자동차전용 제외)끼리 만나는 교차점 */
+  const S=[],vm=new Map();H.forEach((h,i)=>{if(!/^(trunk|primary|secondary|tertiary)$/.test(h[0])||h[1]||h[7])return;const f=h[4];for(let j=0;j<f.length;j+=2){const k=Math.round(f[j]/2)+','+Math.round(f[j+1]/2);let l=vm.get(k);if(!l)vm.set(k,l=[]);l.push([i,j]);}});
+  for(const[k,l]of vm){const ways=[...new Set(l.map(q=>q[0]))];if(ways.length<2)continue;let sig2=false;
+    for(let a=0;a<ways.length&&!sig2;a++)for(let b=a+1;b<ways.length;b++){const ha=H[ways[a]],hb=H[ways[b]];if(ha[3]&&hb[3]&&ha[3]!==hb[3]){sig2=true;break;}
+      const dir=(h,j)=>{const f=h[4],j2=j+2<f.length?j+2:j-2;return Math.atan2(f[j2+1]-f[j+1],f[j2]-f[j]);},ja=l.find(q=>q[0]===ways[a])[1],jb=l.find(q=>q[0]===ways[b])[1],d=Math.abs(Math.sin(dir(ha,ja)-dir(hb,jb)));if(d>.64){sig2=true;break;}}
+    if(sig2){const[i,j]=l[0],f=H[i][4],x=f[j],zz=f[j+1];if(!S.some(q=>Math.hypot(q[0]-x,q[1]-zz)<40))S.push([x,zz]);}}
+  for(const h of H)h.length=7;for(const w of RLW)w[2]=lineColor({name:w[3]})||0;
+  return{B,H,A,S,RLW,ST,TW:[],PL,src:'tiles'};}
+const dSegL=(px,pz,a,b)=>{const vx=b[0]-a[0],vz=b[1]-a[1],t=Math.max(0,Math.min(1,((px-a[0])*vx+(pz-a[1])*vz)/(vx*vx+vz*vz||1)));return Math.hypot(a[0]+vx*t-px,a[1]+vz*t-pz);};
+/* 주소 → 데이터: 타일과 Overpass를 동시에 받아, 타일이 끝난 뒤 Overpass가 8초 안에 오면 Overpass(더 자세함)를, 아니면 타일을 쓴다 */
+async function loadOSM(addr,R,opt={}){loadUI.on();{const h=document.querySelector('h1');if(h)h.textContent='우리 동네 3D · '+addr;}loadUI.t('주소를 찾고 있습니다');loadUI.p(.03);
+  const g=await geocode(addr),lat0=g.lat,lon0=g.lon,KX=111320*Math.cos(lat0*Math.PI/180),KZ=110950,lv=R<=2000?0:R<=5000?1:R<=10000?2:3;
+  const ctx={lat0,lon0,KX,KZ,R,dLat:R/KZ,dLon:R/KX,lv,tol:1+R/5000},src=opt.src||'auto';let D=null;
+  if(src==='overpass')D=await loadOverpassData(ctx,true);
+  else if(src==='tiles')D=await loadTilesData(ctx,true);
+  else{const ab=new AbortController();let O=null,oErr=null;const pO=loadOverpassData(ctx,false,ab.signal).then(d=>O=d,e=>{oErr=e;});
+    let T=null,tErr=null;try{T=await loadTilesData(ctx,true);}catch(e){tErr=e;}
+    if(T){if(!O&&!oErr){loadUI.t('OpenStreetMap 원본(차로 수·신호등) 확인 중');await Promise.race([pO,sleep(8000)]);}if(O)D=O;else{ab.abort();D=T;}}
+    else{loadUI.t('타일 서버 응답 없음 · OpenStreetMap(Overpass) 데이터를 기다리는 중');await pO;if(!O)throw new Error('지도 데이터를 받지 못했습니다. ('+(tErr&&tErr.message)+' / '+(oErr&&oErr.message)+')');D=O;}}
+  loadUI.t(`3D 장면을 만드는 중 · 건물 ${D.B.length.toLocaleString()}개, 도로 ${D.H.length.toLocaleString()}개, 철도 ${D.RLW.length.toLocaleString()}구간`);loadUI.p(.88);await sleep(60);
+  return Object.assign(D,{osm:1,r:R,place:g.name,full:g.full,lat0,lon0});}
 /* 노선색: OSM colour 태그 → 없으면 수도권 노선 이름으로 */
 const SEOUL_LINES=[[/1호선|Line 1\b/i,0x0052A4],[/2호선|Line 2\b/i,0x00A84D],[/3호선|Line 3\b/i,0xEF7C1C],[/4호선|Line 4\b/i,0x00A5DE],[/5호선|Line 5\b/i,0x996CAC],[/6호선|Line 6\b/i,0xCD7C2F],
   [/7호선|Line 7\b/i,0x747F00],[/8호선|Line 8\b/i,0xE6186C],[/9호선|Line 9\b/i,0xBDB092],[/신분당/,0xD4003B],[/경의|중앙선/,0x77C4A3],[/수인|분당선/,0xFABE00],[/공항철도|AREX/i,0x0090D2],[/경춘/,0x0C8E72],[/우이신설/,0xB0CE18],[/신림선/,0x6789CA],[/GTX-?A/i,0x9A6292]];
@@ -914,8 +1014,14 @@ $id('addrForm').addEventListener('submit',async e=>{e.preventDefault();const a=$
   catch(err){const url=GH_PAGES+'?addr='+encodeURIComponent(a)+'&r='+r;
     msg.innerHTML='이 화면(Claude 아티팩트)에서는 외부 지도 서버 접속이 막혀 있습니다. 웹 버전에서 여세요: ';const l=document.createElement('a');l.href=url;l.target='_blank';l.rel='noopener';l.textContent='GitHub Pages에서 열기';msg.appendChild(l);return;}
   location.search='?addr='+encodeURIComponent(a)+'&r='+r;});
+const BAKED='data/lotte-5km.json',qDump=qs.has('dump'),qSrc=qs.get('src')||'auto';
+function bootSafe(D){try{boot(D);}catch(e){console.error(e);loadUI.err('장면을 만드는 중 오류가 났습니다: '+e.message);}}
+async function loadDefault(){/* 기본 화면: 미리 만들어 둔 롯데월드타워 5 km 데이터 → 없으면 실시간 */
+  loadUI.on();loadUI.t('롯데월드타워 반경 5 km 데이터를 여는 중');loadUI.p(.2);
+  try{const r=await fetch(BAKED);if(!r.ok)throw 0;const D=await r.json();if(!D||!D.B)throw 0;loadUI.p(.88);await sleep(30);return D;}catch(e){return loadOSM(qAddr,qR*1000);}}
 if(!window.THREE||!THREE.OrbitControls){$id('err').style.display='grid';}
-else if(qAddr){loadOSM(qAddr,qR*1000).then(D=>{try{boot(D);}catch(e){console.error(e);loadUI.err('장면을 만드는 중 오류가 났습니다: '+e.message);}})
+else if(qDump){loadOSM(qAddr,qR*1000,{src:qSrc}).then(D=>{window.__DUMP=JSON.stringify(D);},e=>{window.__DUMPERR=String(e&&e.message||e);});}
+else if(qAddr){(qDef?loadDefault():loadOSM(qAddr,qR*1000)).then(bootSafe)
   .catch(e=>{if(qDef){$id('load').classList.remove('on');boot({B,H,A});return;}loadUI.err(e.message);const a=document.createElement('a');a.href='?preset';a.textContent='천안 청당동 예시 보기';$id('loadS').textContent='';$id('loadS').appendChild(a);});}
 else boot({B,H,A});
 
