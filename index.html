@@ -323,8 +323,8 @@ function lotteTower(f){const F=footFrame(f),a0=Math.max(26,Math.min(40,(F.mu+F.m
       if(notch){const d=Math.abs(angD2(seam,th));if(d<.055)r-=2.2*(1-d/.055);}pts.push([F.cx+r*Math.cos(th),y,F.cz+r*Math.sin(th)]);}return pts;};
   const cw=lit=>{const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');g.fillStyle=lit?'#000':'#eef2f5';g.fillRect(0,0,256,256);
       for(let y=0;y<256;y+=64){if(lit){for(let x=0;x<256;x+=32)if(rnd()<.8){g.fillStyle=rnd()<.6?'#fff3d6':'#cfe6ff';g.fillRect(x,y+8,32,44);}}
-        else{g.fillStyle='#c3ccd4';g.fillRect(0,y,256,5);g.fillStyle='#dfe6ec';g.fillRect(0,y+5,256,10);}}
-      if(!lit){g.fillStyle='#b4bfc8';for(let x=0;x<256;x+=16)g.fillRect(x,0,1.5,256);}
+        else{g.fillStyle='#d3dbe2';g.fillRect(0,y,256,4);g.fillStyle='#e6ecf1';g.fillRect(0,y+4,256,8);}}
+      if(!lit){g.fillStyle='#cfd8e0';for(let x=0;x<256;x+=16)g.fillRect(x,0,1,256);}
       const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(1/25.6,1/16.8);t.anisotropy=8;return t;};
   const body=new THREE.MeshLambertMaterial({color:0xffffff,map:cw(false),emissive:0xffffff,emissiveMap:cw(true),emissiveIntensity:0});winMats['__lotte']=body;
   const rings=[];for(let y=0;y<=Y1;y+=Y1/90)rings.push(sect(y,0,Math.PI*2,true));loftMesh(rings,body,true);
@@ -391,7 +391,7 @@ const RAILK={subway:{d:-16,v:15,cl:19.5,n:6,col:0x3a6fd8},rail:{d:-12,v:22,cl:22
 const railTris=new Map(),railSink=(m,a)=>{let l=railTris.get(m);if(!l)railTris.set(m,l=[]);l.push(a);};
 const ballastM=new THREE.MeshLambertMaterial({color:0x8f877c,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-6,polygonOffsetUnits:-24}),
   railM=new THREE.MeshLambertMaterial({color:0x5d6066,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-10,polygonOffsetUnits:-40}),
-  deckM=new THREE.MeshLambertMaterial({color:0xbab6ad,side:THREE.DoubleSide}),tunMs={},tunMc=c=>tunMs[c]||(tunMs[c]=new THREE.MeshLambertMaterial({color:new THREE.Color(c).lerp(new THREE.Color(0x3a3f46),.35),side:THREE.DoubleSide})),tunM=new THREE.MeshLambertMaterial({color:0x4a4f57,side:THREE.DoubleSide});
+  deckM=new THREE.MeshLambertMaterial({color:0xbab6ad,side:THREE.DoubleSide}),tunMs={},tunMc=c=>tunMs[c]||(tunMs[c]=new THREE.MeshLambertMaterial({color:new THREE.Color(c).lerp(new THREE.Color(0xffffff),.12),emissive:c,emissiveIntensity:.25,side:THREE.DoubleSide})),tunM=new THREE.MeshLambertMaterial({color:0x4a4f57,side:THREE.DoubleSide});
 const traceMat={},traceM=c=>traceMat[c]||(traceMat[c]=new THREE.MeshBasicMaterial({color:c,side:THREE.DoubleSide,transparent:true,opacity:.6,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-16,polygonOffsetUnits:-64}));
 function offLine(f,o){const n=f.length/2,out=[];for(let i=0;i<n;i++){const i0=Math.max(0,i-1),i1=Math.min(n-1,i+1),tx=f[2*i1]-f[2*i0],tz=f[2*i1+1]-f[2*i0+1],L=Math.hypot(tx,tz)||1;out.push(f[2*i]-tz/L*o,f[2*i+1]+tx/L*o);}return out;}
 const RWD=[];/* 촘촘한 점 + 높이 */
@@ -406,7 +406,7 @@ if(RLW.length){const ek=(x,z)=>Math.round(x/2)+','+Math.round(z/2),ends=new Map(
     const prof=s=>H0*ease(Math.max(0,Math.min(1,Math.min(rs?s/ramp:1,re?(L-s)/ramp:1))));
     const Y=S.map(prof);RWD.push({kind,flag,col:col||K.col,f,S,Y,L,i});
     const pf=(x,s)=>prof(s);
-    if(flag===1){ribbon(f,6.5,tunMc(col||K.col),(x,s)=>prof(s)-.15,railSink);ribbon(f,2.6,traceM(col||K.col),(x,s)=>.12,railSink);}
+    if(flag===1){ribbon(f,9,tunMc(col||K.col),(x,s)=>prof(s)-.15,railSink);ribbon(f,2.6,traceM(col||K.col),(x,s)=>.12,railSink);}
     else if(flag===2){ribbon(f,kind==='tram'?3:5.6,deckM,(x,s)=>prof(s)-.35,railSink);let s0=0;walk(f,30,(x,z,ux,uz,len)=>{s0+=len;const y=prof(s0-len/2);if(y>1.8)piersR.push([x,y/2-.3,z,-Math.atan2(uz,ux),1,y,1]);});}
     if(kind!=='tram')ribbon(f,3.4,ballastM,(x,s)=>prof(s)+.05,railSink);
     for(const o of[-.72,.72])ribbon(offLine(f,o),.16,railM,(x,s)=>prof(s)+.28,railSink);
@@ -819,7 +819,7 @@ if(OSM){document.querySelector('.card h1').textContent='우리 동네 3D · '+(D
   document.querySelector('.card p').textContent=`OpenStreetMap 실시간 데이터로 반경 ${RAD/1000} km를 만들었습니다. 층수·차로 수는 OSM에 있는 값을 쓰고, 없으면 건물·도로 종류별 추정값입니다.`+(RAD>5000?' 반경이 커서 큰 건물과 주요 도로만 불러왔습니다.':'');
   $('credit').innerHTML='지도 데이터 © OpenStreetMap 기여자 (ODbL) · <a href="?preset" style="color:#2f7bff">천안 청당동 예시 보기</a>';$('loadBar').style.width='100%';}
 document.getElementById('load').classList.remove('on');
-window.town3d={camera,controls,view,home,setXray,setNight,setView,startRouteAt,ego,get simT(){return simT}};
+window.town3d={D,camera,controls,view,home,setXray,setNight,setView,startRouteAt,ego,HIDE,LMK,RWD,get simT(){return simT}};
 frame();
 }
 /* ===== 주소 → 반경 2·5·10·15·20 km 불러오기 (Nominatim + Overpass) ===== */
