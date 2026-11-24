@@ -322,11 +322,11 @@ function lotteTower(f){const F=footFrame(f),a0=Math.max(26,Math.min(40,(F.mu+F.m
       let r=a/Math.pow(Math.pow(Math.abs(Math.cos(lt)),e)+Math.pow(Math.abs(Math.sin(lt)),e),1/e);
       if(notch){const d=Math.abs(angD2(seam,th));if(d<.055)r-=2.2*(1-d/.055);}pts.push([F.cx+r*Math.cos(th),y,F.cz+r*Math.sin(th)]);}return pts;};
   const cw=lit=>{const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');g.fillStyle=lit?'#000':'#eef2f5';g.fillRect(0,0,256,256);
-      for(let y=0;y<256;y+=64){if(lit){for(let x=0;x<256;x+=32)if(rnd()<.8){g.fillStyle=rnd()<.6?'#fff3d6':'#cfe6ff';g.fillRect(x,y+8,32,44);}}
+      for(let y=0;y<256;y+=64){if(lit){for(let x=0;x<256;x+=32)if(rnd()<.38){g.fillStyle=rnd()<.6?'#ffe2a8':'#bcd8f5';g.fillRect(x+2,y+10,28,40);}}
         else{g.fillStyle='#d3dbe2';g.fillRect(0,y,256,4);g.fillStyle='#e6ecf1';g.fillRect(0,y+4,256,8);}}
       if(!lit){g.fillStyle='#cfd8e0';for(let x=0;x<256;x+=16)g.fillRect(x,0,1,256);}
       const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(1/25.6,1/16.8);t.anisotropy=8;return t;};
-  const body=new THREE.MeshLambertMaterial({color:0xffffff,map:cw(false),emissive:0xffffff,emissiveMap:cw(true),emissiveIntensity:0});winMats['__lotte']=body;
+  const body=new THREE.MeshLambertMaterial({color:0xffffff,map:cw(false),emissive:0xffffff,emissiveMap:cw(true),emissiveIntensity:0});lmMats.push(body);
   const rings=[];for(let y=0;y<=Y1;y+=Y1/90)rings.push(sect(y,0,Math.PI*2,true));loftMesh(rings,body,true);
   const glass=new THREE.MeshLambertMaterial({color:0xe9f1f7,transparent:true,opacity:.72,side:THREE.DoubleSide,emissive:0xbfe3ff,emissiveIntensity:0});lmMats.push(glass);
   for(let k=0;k<4;k++){const c=F.ang+Math.PI/4+k*Math.PI/2,pr=[];for(let y=Y1;y<=HT+.01;y+=(HT-Y1)/16){const q=(y-Y1)/(HT-Y1),w=.72-.2*q,a=size(y)*(1-.25*q*q),e=expo(y),pts=[];
@@ -556,7 +556,7 @@ function view(p,t){camera.position.set(...p);controls.target.set(...t);controls.
 function home(){const k=wrap.clientWidth/wrap.clientHeight<1?1.7:1;if(OSM){const d=RAD*k;view([-.25*d,1.35*d,1.5*d],[0,0,0]);return;}view([-160*k,1150*k,1250*k],[0,0,-20]);}
 function setNight(n){night=n;const bg=n?0x0c1322:0xcfdfea;scene.background.set(bg);scene.fog.color.set(bg);document.body.style.background=n?'#0c1322':'#cfdfea';
   hemi.intensity=n?.28:.6;hemi.color.set(n?0x6d7fa8:0xe3ecf6);sun.intensity=n?.2:.72;sun.color.set(n?0x9fb4ff:0xfff1dc);
-  Object.values(winMats).forEach(m=>m.emissiveIntensity=n?1.15:0);lmMats.forEach(m=>m.emissiveIntensity=n?1:0);headM.emissiveIntensity=tailM.emissiveIntensity=n?1.4:0;}
+  Object.values(winMats).forEach(m=>m.emissiveIntensity=n?1.15:0);lmMats.forEach(m=>m.emissiveIntensity=n?(m.map?.75:1):0);headM.emissiveIntensity=tailM.emissiveIntensity=n?1.4:0;}
 const $=id=>document.getElementById(id);
 $('bNight').onclick=e=>{setNight(!night);e.currentTarget.setAttribute('aria-pressed',night);e.currentTarget.textContent=night?'낮 풍경':'밤 풍경';};
 $('bLbl').onclick=e=>{showLabels=!showLabels;e.currentTarget.setAttribute('aria-pressed',showLabels);};
