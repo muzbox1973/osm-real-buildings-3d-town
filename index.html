@@ -9,7 +9,7 @@
 <style>
 /* VOICE: 차분하고 정확한 건축 모형 설명
    IDEA: 실측 데이터로 만든 흰색 동네 축소 모형
-   PICTURE: 화면 전체를 채우는 3D 청당동·청룡동, 남부대로 지하차도 포함
+   PICTURE: 화면 전체를 채우는 3D 도시(기본: 롯데월드타워 반경 5 km)
    COLOUR and TYPE: 맑은 하늘색 바탕, 흰 모형, 남색 글자 / Noto Sans KR
    LAYOUT: 전체 화면 장면 위 왼쪽 위 안내 카드, 오른쪽 위 나침반 */
 :root{color-scheme:light dark;--card:light-dark(rgba(255,255,255,.93),rgba(18,24,36,.9));--ink:light-dark(#18222f,#e9eef5);--sub:light-dark(#4c5a6b,#a9b5c4);--btn:light-dark(#eef2f6,#263246);--btnh:light-dark(#dfe6ee,#33425c);--acc:#1f6feb}
@@ -72,26 +72,24 @@ body.cockpit #cockpit{display:block}
 <body>
 <div id="stage"><div id="labels"></div></div>
 <div class="card">
-  <h1>우리 동네 3D · 천안 청당동·청룡동</h1>
-  <p>건물 외곽선과 도로는 OpenStreetMap 실측 데이터, 단지 층수는 분양·매물 정보로 확인한 값입니다. 층수를 못 찾은 동과 북동쪽 주택가는 추정값입니다.</p>
+  <h1>우리 동네 3D · 롯데월드타워</h1>
+  <p>OpenStreetMap 실측 데이터로 만든 3D 도시입니다. 데이터를 불러오는 중입니다.</p>
   <div class="row">
     <button id="bNight" aria-pressed="false">밤 풍경</button>
     <button id="bLbl" aria-pressed="true">이름표</button>
     <button id="bRot" aria-pressed="false">자동 회전</button>
     <button id="bDrive" style="background:#2f7bff;color:#fff">자율주행</button>
-    <button id="bUnder">지하차도 보기</button>
     <button id="bSub" style="display:none" aria-pressed="false">지하철 보기</button>
-    <button id="bCar">차량 가까이</button>
     <button id="bHome">처음 시점</button>
   </div>
   <form id="addrForm" class="addr" autocomplete="off">
     <label for="addrIn">주소로 다른 동네 만들기</label>
-    <div class="addrRow"><input id="addrIn" placeholder="예: 롯데월드타워 / 천안시 동남구 청당동" required>
+    <div class="addrRow"><input id="addrIn" placeholder="예: 롯데월드타워 / 서울시청 / 해운대" required>
     <select id="radIn" aria-label="반경"><option value="2">2 km</option><option value="5">5 km</option><option value="10">10 km</option><option value="15">15 km</option><option value="20">20 km</option></select>
     <button type="submit">만들기</button></div>
     <p id="addrMsg" class="addrMsg"></p>
   </form>
-  <small id="credit">지도 데이터 © OpenStreetMap 기여자 (ODbL) · 차로 수: 국토교통부 ITS 표준노드링크(2026-11-11)</small>
+  <small id="credit">지도 데이터 © OpenStreetMap 기여자 (ODbL)</small>
 </div>
 <div id="toast"></div>
 <div id="cockpit"><svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" width="100%" height="100%"><path d="M0 900V700Q800 610 1600 700V900Z" fill="#15181d"/><path d="M0 700Q800 610 1600 700" stroke="#2b3038" stroke-width="10" fill="none"/><g transform="translate(560 860)"><circle r="190" fill="none" stroke="#0e1014" stroke-width="42"/><path d="M-185 -10H185M0 -10V180" stroke="#0e1014" stroke-width="34"/><circle r="46" fill="#1c2026"/><text y="10" text-anchor="middle" fill="#38bdf8" font-size="28" font-weight="700">AUTO</text></g><path d="M0 0L120 0 40 700H0Z" fill="#101318" opacity=".9"/><path d="M1600 0L1480 0 1560 700H1600Z" fill="#101318" opacity=".9"/></svg></div>
@@ -109,7 +107,6 @@ body.cockpit #cockpit{display:block}
 <div id="err">3D 화면을 불러오지 못했습니다. 새로고침해 주세요.</div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="data.js"></script>
 <script>
 {
 function boot(D){
@@ -182,31 +179,10 @@ function instBoxes(list,w,h,d,mat,shadow){if(!list.length)return;const im=new TH
   list.forEach(([x,y,z,ry,sx,sy,sz],i)=>{tmp.position.set(x,y,z);tmp.rotation.set(0,ry,0);tmp.scale.set(sx||1,sy||1,sz||1);tmp.updateMatrix();im.setMatrixAt(i,tmp.matrix);});
   im.castShadow=!!shadow;im.receiveShadow=true;scene.add(im);}
 
-/* 남부대로 지하차도 단면(본선만 지하로) */
-const WB=[917,-140,808,-144,777,-143,730,-137,577,-112,477,-92,447,-85,409,-81,351,-81,192,-99,-136,-150,-216,-161,-528,-207,-724,-237];
-const EB=[-726,-227,-500,-194,-217,-153,-138,-140,190,-89,302,-72,351,-69,408,-71,448,-76,489,-84,580,-104,732,-129,777,-135,917,-132];
-const U0=-480,U1=-380,U2=80,U3=180,DEPTH=7.5,TUN=[-217,-136];
 const ease=t=>t*t*(3-2*t);
-const under=x=>OSM||x<=U0||x>=U3?0:x<U1?-DEPTH*ease((x-U0)/(U1-U0)):x>U2?-DEPTH*ease((U3-x)/(U3-U2)):-DEPTH;
-const zAt=(f,x)=>{for(let i=2;i<f.length;i+=2){const a=f[i-2],b=f[i];if((x-a)*(x-b)<=0&&a!==b)return f[i-1]+(f[i+1]-f[i-1])*(x-a)/(b-a);}return f[1];};
+const under=x=>0;
 const MAINW=8;
-if(OSM){const gr=new THREE.Mesh(new THREE.PlaneGeometry(RAD*14,RAD*14),new THREE.MeshLambertMaterial({color:0xd6d2c4}));gr.rotation.x=-Math.PI/2;gr.receiveShadow=true;scene.add(gr);GL.push(gr);}
-else{
-  const hole=[];for(let x=U0+8;x<=U3-8;x+=10)hole.push([x,zAt(WB,x)-MAINW/2-.4]);
-  for(let x=U3-8;x>=U0+8;x-=10)hole.push([x,zAt(EB,x)+MAINW/2+.4]);
-  const holeF=hole.flat();
-  const gs=new THREE.Shape([new THREE.Vector2(-6000,-6000),new THREE.Vector2(6000,-6000),new THREE.Vector2(6000,6000),new THREE.Vector2(-6000,6000)]);
-  gs.holes.push(new THREE.Path(hole.map(p=>new THREE.Vector2(p[0],-p[1]))));
-  const ground=new THREE.Mesh(new THREE.ShapeGeometry(gs),Mc(0xd6d2c4));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
-  flat(holeF,Mc(0x6f7276),-DEPTH-.3,true);
-  const walls=[];
-  for(const[f,s]of[[WB,-1],[EB,1]])for(let x=U0+8;x<U3-8;x+=6){const x2=x+6,z1=zAt(f,x)+s*(MAINW/2+.4),z2=zAt(f,x2)+s*(MAINW/2+.4),d=Math.max(-under(x+3),.4)+1.1;
-    walls.push([(x+x2)/2,1.1-d/2,(z1+z2)/2,-Math.atan2(z2-z1,x2-x),Math.hypot(x2-x,z2-z1)+.3,d,1]);}
-  instBoxes(walls,1,1,.6,Mc(0xbdb9b0),false);
-  const deck=[];for(let x=TUN[0];x<=TUN[1];x+=9)deck.push([x,zAt(WB,x)-MAINW/2-1.4]);for(let x=TUN[1];x>=TUN[0];x-=9)deck.push([x,zAt(EB,x)+MAINW/2+1.4]);
-  const dg=new THREE.ExtrudeGeometry(shapeOf(deck.flat()),{depth:1.4,bevelEnabled:false});dg.rotateX(-Math.PI/2);
-  const dm=new THREE.Mesh(dg,Mc(0xb4b0a6));dm.position.y=-1.2;dm.castShadow=dm.receiveShadow=true;scene.add(dm);
-}
+{const gr=new THREE.Mesh(new THREE.PlaneGeometry(RAD*14,RAD*14),new THREE.MeshLambertMaterial({color:0xd6d2c4}));gr.rotation.x=-Math.PI/2;gr.receiveShadow=true;scene.add(gr);GL.push(gr);}
 
 /* 면 정보(공원·숲·단지 마당 등) */
 const AC={residential:[0xd0d4c6,1],school:[0xe4dfd2,2],construction:[0xb7a77f,2],grass:[0xa9c48a,3],farmland:[0xbdc896,3],village_green:[0x9fbf82,3],
@@ -216,12 +192,12 @@ flushTris();
 
 /* 도로 */
 const RW={motorway:14,motorway_link:7,trunk:MAINW,trunk_link:7,primary:12,primary_link:7,secondary:10,secondary_link:7,tertiary:9,tertiary_link:7,unclassified:6,residential:7,living_street:6};
-/* 차로 수: 국토부 ITS 표준노드링크(2026-11-11)에서 매칭한 방향별 차로 수 h[5]=[정방향,역방향] */
+/* 차로 수: OSM lanes(방향별) h[5]=[정방향,역방향], 없으면 도로 종류별 기본값 */
 const ONEWAYT=new Set(['trunk','trunk_link','primary']);
 const DEFL={motorway:2,motorway_link:1,trunk:2,trunk_link:1,primary:2,primary_link:1,secondary:2,secondary_link:1,tertiary:1,tertiary_link:1,unclassified:1,residential:1,living_street:1};
 const LWt=t=>t==='trunk'||t==='motorway'?3.5:/_link$/.test(t)?3.0:3.1;
 function laneOf(h){const t=h[0],one=h.length>6?!!h[6]:ONEWAYT.has(t),L=h[5]||[0,0],f=L[0]||DEFL[t]||1,b=one?0:(L[1]||L[0]||DEFL[t]||1);
-  const lw=LWt(t),W=one?(t==='trunk'&&f===2?MAINW:f*lw+1):(f+b)*lw+.6;return{one,f,b,lw,W,src:L[0]?(OSM?'OSM':'표준노드링크'):'추정'};}
+  const lw=LWt(t),W=one?(t==='trunk'&&f===2?MAINW:f*lw+1):(f+b)*lw+.6;return{one,f,b,lw,W,src:L[0]?'OSM':'추정'};}
 const wOf=h=>laneOf(h).W;
 const RC={motorway:0x4a4d53,motorway_link:0x55585e,primary_link:0x55585e,secondary_link:0x5b5e63,unclassified:0x66696e,trunk:0x4c4f55,trunk_link:0x55585e,primary:0x55585e,secondary:0x5b5e63,tertiary:0x5b5e63,tertiary_link:0x5b5e63,residential:0x66696e,living_street:0x74777b};
 const roadSegs=[];
@@ -246,7 +222,7 @@ for(const h of H){const[t,flag,lanes,,f]=h,w=wOf(h);
   if(OSM&&flag===2&&prof){let s0=0;walk(f,24,(x,z,ux,uz,len)=>{s0+=len;const y=prof(x,s0-len/2);if(y>1.5)piers.push([x,y/2,z,-Math.atan2(uz,ux),1,y,1]);});}}
 flushTris();
 instBoxes(piers,2,1,6,Mc(0xbdb9b0),SHADOW);
-/* 차선·중앙선 (표준노드링크 차로 수 기준) */
+/* 차선·중앙선 (차로 수 기준) */
 if(!OSM||RAD<=5000){const WH=[],YL=[];
  function line(arr,f,off,prof,dash,hw=.08){let cum=0;for(let i=2;i<f.length;i+=2){const ax=f[i-2],az=f[i-1],bx=f[i],bz=f[i+1],L=Math.hypot(bx-ax,bz-az);if(L<.5){cum+=L;continue;}
    const ux=(bx-ax)/L,uz=(bz-az)/L,nx=-uz,nz=ux,step=dash?9:L,len=dash?4.5:L;
@@ -261,20 +237,6 @@ if(!OSM||RAD<=5000){const WH=[],YL=[];
 const nearRoad=(x,z,m)=>{for(const s of segGrid.at(x,z))if(dSeg(x,z,s[0],s[1],s[2],s[3])<s[4]/2+m)return true;return false;};
 
 /* 건물: OSM 외곽선 + 층수 */
-const inb=(cx,cz,x0,x1,z0,z1)=>cx>x0&&cx<x1&&cz>z0&&cz<z1;
-const CPLX=[ // [x0,x1,z0,z1,층수,벽색,옥상색] — 웹 확인 층수
-  [-60,365,55,285,15,0xf3ece2,0xa5533f],      // 청당벽산블루밍 15층
-  [-180,-85,55,320,25,0xe9eef3,0x44627d],     // 행정타운센트럴두산위브 25층(OSM)
-  [-435,-215,165,400,20,0xeef0f3,0x3f6f8f],   // 청당한양수자인블루시티 20층 이상
-  [-580,-320,-75,125,25,0xf1ebe2,0x9b6b54],   // 청당서희스타힐스 최고 27층
-  [-860,-465,-45,185,23,0xefe8dc,0x6f8a6a],   // 청당코오롱하늘채 23층
-  [475,685,15,300,25,0xe8edf2,0x2f5a7a],      // 행정타운두산위브더파크 최고 26층
-  [-745,-450,-465,-265,20,0xf3eee5,0x7f8f9e], // 버들마을우미린 12~25층
-  [-480,-190,-410,-195,22,0xeef1f4,0x5f7f96], // 청수한양수자인 22층
-  [-415,-280,-545,-445,15,0xf0ede6,0x8a7a6a], // 휴먼시아2단지(층수 미확인)
-  [-700,-570,-580,-495,20,0xf2efe8,0x6a7f8f]  // 포레나(층수 미확인)
-];
-const NAMED={'천안세무서':5,'동천안우체국':4,'하나로마트':2,'대전지방법원천안지원':7,'대전지방검찰청천안지청':7,'천안시종합사회복지관':3,'백석대학교회':3};
 const cc=[0xe9dcc8,0xd7dde4,0xcbbba8,0xf1e7d8,0xbfc9d2,0xe3cfc0,0xd9d2c7];
 const bBoxes=[],bGrid=Grid(80);
 const extrude=(f,h,side,roof,base=0)=>addExtrude(f,h,side,roof,base);
@@ -359,25 +321,8 @@ for(const bE of B){const[t,lv,name,f]=bE;const bb=bbox(f),cx=(bb[0]+bb[1])/2,cz=
     const top=bE[4]||fl*(t==='a'?2.9:t==='i'?4.5:3.3),base=Math.min(bE[5]||0,top-1),rs=bE[6]||'',sh=/^(pyramidal|hipped|cone|dome|onion|round|half-dome|gabled|skillion|gambrel|mansard)$/.test(rs);
     let rh=0;if(sh)rh=bE[9]||Math.min((top-base)*.45,/dome|onion|round/.test(rs)?Math.sqrt(ar/Math.PI):Math.sqrt(ar)*.3);
     const wt=Math.max(base+.5,top-rh);addExtrude(f,wt-base,sideMat(side),roof,base);if(rh>.3)roofTris(f,wt,rh,rs,dMat(rc||(OROOF[t]?pick(OROOF[t]):0x8a9aa3)));continue;}
-  if(t==='a'){const c=CPLX.find(c=>inb(cx,cz,c[0],c[1],c[2],c[3]));
-    fl=fl||(c?c[4]:15);if(c&&c[0]===-745)fl=name==='309'?12:name==='306'?25:20;
-    side=c?c[5]:0xf0ede6;roof=roofOf(c?c[6]:0x8a9aa3);}
-  else if(!fl)fl=NAMED[name]||(t==='s'?4:t==='h'?6:t==='r'?10:t==='p'?4:ar<90?2:t==='c'?5:4);
-  extrude(f,fl*(t==='a'?2.9:3.6),sideMat(side),roof);}
+}
 
-/* 북동쪽 단독주택가 (OSM 미등록 → 골목 따라 근사 배치) */
-const noHouse=A.filter(a=>['park','wood','forest','pitch','parking','school'].includes(a[0])).map(a=>[bbox(a[2]),a[2]]);
-const houses=[],hc=[0xf2ece1,0xe6e0d4,0xefe3cf,0xdfe5e8,0xf4efe8],hr=[0x9b5a43,0x5f7f8c,0x7a6e62,0xb07a4e,0x8a9aa3,0x6c8a5a];
-for(const[t,,,,f]of(OSM?[]:H)){if(t!=='living_street'&&t!=='residential')continue;
-  walk(f,14,(x,z,ux,uz)=>{for(const s of[-1,1]){const hx=x-uz*11*s+R(-1.5,1.5),hz=z+ux*11*s+R(-1.5,1.5);
-    if(hx<380||hx>935||hz<-575||hz>-165)continue;
-    if(noHouse.some(([b,p])=>hx>b[0]&&hx<b[1]&&hz>b[2]&&hz<b[3]&&pip(hx,hz,p)))continue;
-    if(nearRoad(hx,hz,4.5)||houses.some(h=>Math.hypot(h[0]-hx,h[1]-hz)<12.5))continue;
-    houses.push([hx,hz,-Math.atan2(uz,ux)]);}});}
-const houseFoot=[];
-for(const[x,z,r]of houses){const w=R(9,12),d=R(9,12),h=Math.round(R(2,4))*3.2,c=Math.cos(r),s=Math.sin(r);
-  const pts=[[-w/2,-d/2],[w/2,-d/2],[w/2,d/2],[-w/2,d/2]].map(([a,b])=>[x+a*c+b*s,z-a*s+b*c]).flat();
-  extrude(pts,h,sideMat(pick(hc)),roofOf(pick(hr)));const hb=bbox(pts);houseFoot.push(hb);bGrid.add([hb[0]-2,hb[1]+2,hb[2]-2,hb[3]+2],hb);}
 flushExtrude();
 /* 랜드마크 세우기 */
 for(const[lm,b]of LMK){const r=lm.make(b[3]);if(r)bBoxes.push([r.x-40,r.x+40,r.z-40,r.z+40]);}
@@ -515,13 +460,8 @@ const cat=(...ws)=>ws.flat();
 const oneLanes=(h,n)=>{const L=laneOf(h),k=n||L.f;return Array.from({length:k},(_,i)=>[-L.W/2+.5+(i+.5)*L.lw,1]);};
 const twoLanes=h=>{const L=laneOf(h),o=[];for(let i=0;i<L.f;i++)o.push([(i+.5)*L.lw,1]);for(let i=0;i<L.b;i++)o.push([(i+.5)*L.lw,-1]);return o;};
 const hBy=(fn)=>H.find(fn);
-(OSM?H.map(h=>{if(!['motorway','trunk','primary','secondary','tertiary'].includes(h[0])||h[1])return null;const f=h[4];let L=0;for(let i=2;i<f.length;i+=2)L+=Math.hypot(f[i]-f[i-2],f[i+1]-f[i-1]);
-   return Math.hypot(f[0],f[1])<1800&&L>220?[f,laneOf(h).one?oneLanes(h):twoLanes(h),L>600?2:1,[h[0]==='tertiary'?9:13,h[0]==='tertiary'?13:20],false,h[0]!=='tertiary',L,wayProf(h)]:null;}).filter(Boolean).sort((a,b)=>b[6]-a[6]).slice(0,12):[
-[EB,[[-1.75,1],[1.75,1]],6,[24,34],true],[WB,[[-1.75,1],[1.75,1]],6,[24,34],true],
- [hBy(h=>h[3]==='천안대로'&&h[4][0]===888)[4],oneLanes(hBy(h=>h[3]==='천안대로'&&h[4][0]===888)),3,[16,22],false,true],[hBy(h=>h[3]==='천안대로'&&h[4][0]===920)[4],oneLanes(hBy(h=>h[3]==='천안대로'&&h[4][0]===920)),3,[16,22],false,true],
- [hBy(h=>h[3]==='청수14로'&&h[2]===6)[4],twoLanes(hBy(h=>h[3]==='청수14로'&&h[2]===6)),2,[11,15],false,true],[hBy(h=>h[3]==='청당2길')[4],twoLanes(hBy(h=>h[3]==='청당2길')),3,[9,13]],
- [cat([-209,-384,-183,-313,-175,-268,-172,-223,-173,-190,-181,-138],[-189,-53,-197,157]),twoLanes(hBy(h=>h[3]==='청수4로')),2,[9,13]],
- [hBy(h=>h[3]==='청당4로')[4],twoLanes(hBy(h=>h[3]==='청당4로')),2,[9,13]]])
+H.map(h=>{if(!['motorway','trunk','primary','secondary','tertiary'].includes(h[0])||h[1])return null;const f=h[4];let L=0;for(let i=2;i<f.length;i+=2)L+=Math.hypot(f[i]-f[i-2],f[i+1]-f[i-1]);
+   return Math.hypot(f[0],f[1])<1800&&L>220?[f,laneOf(h).one?oneLanes(h):twoLanes(h),L>600?2:1,[h[0]==='tertiary'?9:13,h[0]==='tertiary'?13:20],false,h[0]!=='tertiary',L,wayProf(h)]:null;}).filter(Boolean).sort((a,b)=>b[6]-a[6]).slice(0,12)
  .forEach(([f,lanes,n,sp,main,big,,prof])=>{const p=mkPath(f);for(const[o,dir]of lanes.slice(0,6))for(let k=0;k<n;k++){
    const q=rnd(),kind=(main||big)&&q<.06?'bus':(main||big)&&q<.12?'truck':q<.32?'suv':'sedan';
    const m=makeVehicle(kind,kind==='bus'?pick(busCols):pick(carCols));
@@ -531,13 +471,8 @@ function placeCar(c){const[x,z,u0,v0]=at(c.p,c.d),ux=u0*c.dir,uz=v0*c.dir,px=x-u
 cars.forEach(placeCar);
 
 /* 이름표 */
-const LB=[['청수버들마을우미린',-600,-370,92],['청수한양수자인',-330,-300,82],['휴먼시아2단지',-350,-495,62],['청수버들마을포레나',-640,-540,75],
- ['청당서희스타힐스',-450,20,95],['청당코오롱하늘채',-660,80,85],['행정타운센트럴두산위브',-130,190,90],['청당벽산블루밍',150,165,58],
- ['청당한양수자인블루시티',-320,290,75],['행정타운두산위브더파크',580,160,90],['두산위브더제니스 센트럴천안 부지 · 2029.01 예정',-570,320,14,'c'],
- ['청당초등학교',-255,85,26],['능수초등학교',540,420,26],['가온초등학교',-490,-525,26],['청당2공원',300,-330,30,'g'],['천안생활체육공원',830,100,18,'g'],
- ['천안세무서',72,-462,30],['동천안우체국',100,-375,26],['대전지방법원 천안지원',16,-590,40],['대전지방검찰청 천안지청',-140,-517,40],
- ['하나로마트',-75,-222,18],['천안우리병원',130,-50,30],['청당동 주택가',650,-330,22,'g'],['남부대로 지하차도',-170,-146,14,'u'],['남부대로',600,-110,10,'g'],['천안대로',955,60,10,'g']];
-if(OSM){LB.length=0;const seen=new Set(),cands=[];
+const LB=[];
+{const seen=new Set(),cands=[];
   for(const[k,n,f]of A){if(!n||!['residential','school','park','hospital','commercial'].includes(k))continue;const b=bbox(f);cands.push([n,(b[0]+b[1])/2,(b[2]+b[3])/2,k==='residential'?60:28,k==='park'?'g':'',areaOf(f)]);}
   for(const[n,x,z,w]of(D.PL||[]))cands.push([n,x,z,30,'',w]);
   for(const[t,lv,n,f]of B){if(!n||/^\d+$/.test(n)||(!lv&&!['s','h','g'].includes(t)))continue;const b=bbox(f);cands.push([n,(b[0]+b[1])/2,(b[2]+b[3])/2,30,'',areaOf(f)]);}
@@ -553,7 +488,7 @@ function placeLabels(){const w=wrap.clientWidth,h=wrap.clientHeight;for(const l 
 
 /* 조작 */
 function view(p,t){camera.position.set(...p);controls.target.set(...t);controls.update();}
-function home(){const k=wrap.clientWidth/wrap.clientHeight<1?1.7:1;if(OSM){const d=RAD*k;view([-.25*d,1.35*d,1.5*d],[0,0,0]);return;}view([-160*k,1150*k,1250*k],[0,0,-20]);}
+function home(){const k=wrap.clientWidth/wrap.clientHeight<1?1.7:1,d=RAD*k;view([-.25*d,1.35*d,1.5*d],[0,0,0]);}
 function setNight(n){night=n;const bg=n?0x0c1322:0xcfdfea;scene.background.set(bg);scene.fog.color.set(bg);document.body.style.background=n?'#0c1322':'#cfdfea';
   hemi.intensity=n?.28:.6;hemi.color.set(n?0x6d7fa8:0xe3ecf6);sun.intensity=n?.2:.72;sun.color.set(n?0x9fb4ff:0xfff1dc);
   Object.values(winMats).forEach(m=>m.emissiveIntensity=n?1.15:0);lmMats.forEach(m=>m.emissiveIntensity=n?(m.map?.75:1):0);headM.emissiveIntensity=tailM.emissiveIntensity=n?1.4:0;}
@@ -561,11 +496,9 @@ const $=id=>document.getElementById(id);
 $('bNight').onclick=e=>{setNight(!night);e.currentTarget.setAttribute('aria-pressed',night);e.currentTarget.textContent=night?'낮 풍경':'밤 풍경';};
 $('bLbl').onclick=e=>{showLabels=!showLabels;e.currentTarget.setAttribute('aria-pressed',showLabels);};
 $('bRot').onclick=e=>{controls.autoRotate=!controls.autoRotate;e.currentTarget.setAttribute('aria-pressed',controls.autoRotate);};
-$('bUnder').onclick=()=>view([-560,55,-245],[-230,-6,-160]);
-if(OSM){$('bUnder').style.display='none';$('bCar').style.display='none';if(RWD.some(w=>w.flag===1))$('bSub').style.display='';}
+if(RWD.some(w=>w.flag===1))$('bSub').style.display='';
 $('bSub').onclick=e=>{setXray(!xray);e.currentTarget.setAttribute('aria-pressed',xray);e.currentTarget.textContent=xray?'지상 보기':'지하철 보기';};
 $('bHome').onclick=home;
-$('bCar').onclick=()=>view([240,16,-62],[420,0,-86]);
 const cmp=$('cmp');
 function size(){const w=wrap.clientWidth,h=wrap.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
 const stageRO=new ResizeObserver(size);stageRO.observe(wrap);size();home();
@@ -629,7 +562,7 @@ const angD=(a,b)=>{let d=b-a;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*
 const headAt=(r,d)=>{const a=sampleR(r,d-3),b=sampleR(r,d+3);return Math.atan2(b.z-a.z,b.x-a.x);};
 const wname=wi=>wi>=0&&ways[wi].name?ways[wi].name:'';
 function maneuvers(r){const M=[];let under0=false;
-  for(let k=1;k<r.length-1;k++){const p=r[k];if(!under0&&p.y<-1){under0=true;M.push({d:p.d,ty:'under',name:OSM?wname(p.wi):'남부대로'});}
+  for(let k=1;k<r.length-1;k++){const p=r[k];if(!under0&&p.y<-1){under0=true;M.push({d:p.d,ty:'under',name:wname(p.wi)});}
     if(p.node<0)continue;const a=sampleR(r,p.d-12),b=sampleR(r,p.d+12),hin=Math.atan2(p.z-a.z,p.x-a.x),hout=Math.atan2(b.z-p.z,b.x-p.x),dl=angD(hin,hout)*180/Math.PI;
     if(Math.abs(dl)<28||(gdeg[p.node]<3&&Math.abs(dl)<60))continue;
     const m={d:p.d,ty:Math.abs(dl)>150?'uturn':dl>0?'right':'left',name:wname(r[Math.min(k+3,r.length-1)].wi),mag:Math.abs(dl)};
@@ -656,9 +589,6 @@ function routeRibbon(r){const pos=[],idx=[];r.forEach((p,i)=>{const h=headAt(r,p
 const MAJOR=new Set(['primary','secondary','tertiary','tertiary_link','trunk_link','trunk','primary_link','secondary_link','motorway_link']);
 const cand=[];
 if(OSM){const used=new Set();for(const[sx,sz]of SIGN){if(Math.hypot(sx,sz)>3000)continue;for(let gx=Math.round(sx/2)-9;gx<=Math.round(sx/2)+9;gx++)for(let gz=Math.round(sz/2)-9;gz<=Math.round(sz/2)+9;gz++){const l=ggrid.get(gx+','+gz);if(l)for(const i of l)if(!used.has(i)&&gdeg[i]>=3&&Math.hypot(gnodes[i][0]-sx,gnodes[i][1]-sz)<20){used.add(i);cand.push(i);}}}}
-else gnodes.forEach((n,i)=>{if(gdeg[i]<3||n[0]<RX[0]||n[0]>RX[1]||n[1]<RZ[0]||n[1]>RZ[1]||under(n[0])<-.01&&Math.abs(n[1]-zAt(EB,n[0]))<12)return;
-  const ws=new Set(gundir[i].filter(e=>e.wi>=0&&MAJOR.has(ways[e.wi].t)&&!(ways[e.wi].t==='trunk'&&(under(n[0])<-.01||ways[e.wi].flag))).map(e=>e.wi));
-  const names=new Set([...ws].map(w=>ways[w].name||('#'+ways[w].t))),local=[...ws].some(w=>!['trunk','trunk_link'].includes(ways[w].t));if(ws.size>=2&&names.size>=2&&local)cand.push(i);});
 const SIG=[];
 for(const i of cand){if(SIG.length>=160&&!SIG.find(q=>Math.hypot(q.x-gnodes[i][0],q.z-gnodes[i][1])<38))continue;const[x,z]=gnodes[i];let c=SIG.find(q=>Math.hypot(q.x-x,q.z-z)<38);if(c){c.m.push(i);c.x=(c.x*(c.m.length-1)+x)/c.m.length;c.z=(c.z*(c.m.length-1)+z)/c.m.length;}else SIG.push({x,z,m:[i]});}
 const LAMP={R:0xff3b30,Y:0xffcc00,L:0x34c759,G:0x34c759},OFF=0x30333a;
@@ -817,7 +747,7 @@ function frame(){const raw=Math.min(clock.getDelta(),.05),dt=raw*motion;
   requestAnimationFrame(frame);}
 if(OSM){document.querySelector('.card h1').textContent='우리 동네 3D · '+(D.place||'검색 위치');
   document.querySelector('.card p').textContent=`${D.baked?'미리 받아 둔 OpenStreetMap 데이터('+D.baked.at.slice(0,10)+')로':'OpenStreetMap 실시간 데이터로'} 반경 ${RAD/1000} km를 만들었습니다. 층수·차로 수는 OSM에 있는 값을 쓰고, 없으면 건물·도로 종류별 추정값입니다.`+(RAD>5000?' 반경이 커서 큰 건물과 주요 도로만 불러왔습니다.':'');
-  $('credit').innerHTML='지도 데이터 © OpenStreetMap 기여자 (ODbL) · <a href="?preset" style="color:#2f7bff">천안 청당동 예시 보기</a>';$('loadBar').style.width='100%';}
+  $('credit').innerHTML='지도 데이터 © OpenStreetMap 기여자 (ODbL)'+(D.baked?'':' · <a href="'+location.pathname+'" style="color:#2f7bff">롯데월드타워 기본 화면</a>');$('loadBar').style.width='100%';}
 document.getElementById('load').classList.remove('on');
 window.town3d={D,camera,controls,view,home,setXray,setNight,setView,startRouteAt,ego,HIDE,LMK,RWD,tick(n=1,dt=1/30){for(let i=0;i<n;i++){const m=ego.on?ego.mult:1;simT+=dt*m;updateSignals();npcStep(dt*m);railStep(simT);updateDrive(dt);}if(!ego.on||ego.view==='free')controls.update();renderer.render(scene,camera);placeLabels();},get simT(){return simT}};
 frame();
@@ -825,7 +755,7 @@ frame();
 /* ===== 주소 → 반경 2·5·10·15·20 km 불러오기 (Nominatim + Overpass) ===== */
 const $id=id=>document.getElementById(id);
 const GH_PAGES='https://muzbox1973.github.io/osm-real-buildings-3d-town/';
-const qs=new URLSearchParams(location.search),qPreset=qs.has('preset'),qDef=!qPreset&&!qs.get('addr'),qAddr=qPreset?'':((qs.get('addr')||'').trim()||'롯데월드타워'),qR=[2,5,10,15,20].includes(+qs.get('r'))?+qs.get('r'):(qDef?5:2);
+const qs=new URLSearchParams(location.search),qDef=!qs.get('addr'),qAddr=(qs.get('addr')||'').trim()||'롯데월드타워',qR=[2,5,10,15,20].includes(+qs.get('r'))?+qs.get('r'):(qDef?5:2);
 const loadUI={on(){$id('load').classList.add('on');},t(m){$id('loadS').textContent=m;},p(f){$id('loadBar').style.width=Math.round(f*100)+'%';},err(m){const e=$id('loadE');e.style.color='';e.textContent=m;}};
 const NOMI='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=kr&accept-language=ko&q=';
 const OVP=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
@@ -1015,16 +945,17 @@ $id('addrForm').addEventListener('submit',async e=>{e.preventDefault();const a=$
   catch(err){const url=GH_PAGES+'?addr='+encodeURIComponent(a)+'&r='+r;
     msg.innerHTML='이 화면(Claude 아티팩트)에서는 외부 지도 서버 접속이 막혀 있습니다. 웹 버전에서 여세요: ';const l=document.createElement('a');l.href=url;l.target='_blank';l.rel='noopener';l.textContent='GitHub Pages에서 열기';msg.appendChild(l);return;}
   location.search='?addr='+encodeURIComponent(a)+'&r='+r;});
-const BAKED='data/lotte-5km.json',qDump=qs.has('dump'),qSrc=qs.get('src')||'auto';
+const qDump=qs.has('dump'),qSrc=qs.get('src')||'auto';
 function bootSafe(D){try{boot(D);}catch(e){console.error(e);loadUI.err('장면을 만드는 중 오류가 났습니다: '+e.message);}}
-async function loadDefault(){/* 기본 화면: 미리 만들어 둔 롯데월드타워 5 km 데이터 → 없으면 실시간 */
-  loadUI.on();loadUI.t('롯데월드타워 반경 5 km 데이터를 여는 중');loadUI.p(.2);
-  try{const r=await fetch(BAKED);if(!r.ok)throw 0;const D=await r.json();if(!D||!D.B)throw 0;loadUI.p(.88);await sleep(30);return D;}catch(e){return loadOSM(qAddr,qR*1000);}}
+/* 기본 화면 데이터(롯데월드타워 반경 5 km): GitHub Actions가 미리 만든 data.js — 파일로 열거나 아티팩트에서도 동작 */
+function loadBaked(){return new Promise((res,rej)=>{if(window.TOWN3D_BAKED)return res(window.TOWN3D_BAKED);const sc=document.createElement('script');sc.src='data.js';
+  sc.onload=()=>window.TOWN3D_BAKED?res(window.TOWN3D_BAKED):rej(new Error('기본 데이터가 비어 있습니다'));sc.onerror=()=>rej(new Error('기본 데이터(data.js)를 불러오지 못했습니다'));document.head.appendChild(sc);});}
+async function loadDefault(){loadUI.on();loadUI.t('롯데월드타워 반경 5 km 데이터를 여는 중');loadUI.p(.2);
+  try{const D=await loadBaked();loadUI.p(.88);await sleep(30);return D;}catch(e){return loadOSM(qAddr,qR*1000);}}
+function homeLink(){const a=document.createElement('a');a.href=location.pathname;a.textContent='롯데월드타워 기본 화면 보기';$id('loadS').textContent='';$id('loadS').appendChild(a);}
 if(!window.THREE||!THREE.OrbitControls){$id('err').style.display='grid';}
 else if(qDump){loadOSM(qAddr,qR*1000,{src:qSrc}).then(D=>{window.__DUMP=JSON.stringify(D);},e=>{window.__DUMPERR=String(e&&e.message||e);});}
-else if(qAddr){(qDef?loadDefault():loadOSM(qAddr,qR*1000)).then(bootSafe)
-  .catch(e=>{if(qDef){$id('load').classList.remove('on');boot({B,H,A});return;}loadUI.err(e.message);const a=document.createElement('a');a.href='?preset';a.textContent='천안 청당동 예시 보기';$id('loadS').textContent='';$id('loadS').appendChild(a);});}
-else boot({B,H,A});
+else (qDef?loadDefault():loadOSM(qAddr,qR*1000)).then(bootSafe).catch(e=>{loadUI.err(e.message);if(!qDef)homeLink();});
 
 }
 </script>

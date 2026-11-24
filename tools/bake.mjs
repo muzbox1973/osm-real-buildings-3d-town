@@ -1,4 +1,4 @@
-// 기본 화면(롯데월드타워 반경 5 km) 데이터를 미리 만들어 data/lotte-5km.json 으로 저장한다.
+// 기본 화면(롯데월드타워 반경 5 km) 데이터를 미리 만들어 data.js 로 저장한다(window.TOWN3D_BAKED).
 // 앱(index.html)을 헤드리스 브라우저로 열어 ?dump=1 로 받은 데이터를 그대로 기록하므로, 앱과 같은 변환 규칙을 쓴다.
 // 1순위 Overpass(차로 수·신호등·3D 부품·노선색까지), 실패하면 벡터 타일(OpenFreeMap).
 // 사용: npm i --no-save playwright && npx playwright install chromium && node tools/bake.mjs
@@ -10,7 +10,7 @@ import path from 'node:path';
 const ROOT = process.cwd();
 const ADDR = process.env.BAKE_ADDR || '롯데월드타워';
 const RKM = process.env.BAKE_R || '5';
-const OUT = process.env.BAKE_OUT || 'data/lotte-5km.json';
+const OUT = process.env.BAKE_OUT || 'data.js';
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json' };
 
 const server = http.createServer((req, res) => {
@@ -52,5 +52,5 @@ if (!out) { console.error('no data'); process.exit(1); }
 const D = JSON.parse(out);
 D.baked = { at: new Date().toISOString(), src: used, addr: ADDR, r: +RKM };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
-fs.writeFileSync(OUT, JSON.stringify(D));
+fs.writeFileSync(OUT, '/* 롯데월드타워 반경 5 km · © OpenStreetMap 기여자 (ODbL) · tools/bake.mjs 로 생성 */\nwindow.TOWN3D_BAKED=' + JSON.stringify(D) + ';\n');
 console.log(`saved ${OUT} (${used}) buildings=${D.B.length} roads=${D.H.length} rail=${D.RLW.length} bytes=${fs.statSync(OUT).size}`);
