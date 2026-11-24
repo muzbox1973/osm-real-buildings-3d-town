@@ -43,8 +43,17 @@
 
 ## 사용법
 
-### 1) 청당동 예시 (기본 화면)
-`index.html`을 열면 천안시 동남구 청당동·청룡동 일대가 바로 나옵니다.
+### 1) 기본 화면: 롯데월드타워 반경 5 km
+웹 버전(또는 `index.html`)을 주소 없이 열면 **롯데월드타워 반경 5 km**를 OSM에서 받아 3D로 만듭니다(1~2분).
+
+| 예시 | 주소 |
+|---|---|
+| 기본 화면 (롯데월드타워 5 km) | https://muzbox1973.github.io/osm-real-buildings-3d-town/ |
+| 롯데월드타워 2 km (신호등·차선까지 자세히) | `.../?addr=롯데월드타워&r=2` |
+| 롯데월드타워 10 km (서울 동남권 전체) | `.../?addr=롯데월드타워&r=10` |
+| 천안 청당동 예시 (지하차도·실제 차로 수 포함) | `.../?preset` |
+
+> 외부 지도 서버에 접속할 수 없는 환경(Claude 아티팩트, 오프라인 `file://`)에서는 자동으로 **천안 청당동 예시**가 열립니다.
 
 - **마우스**: 왼쪽 드래그 회전 · 오른쪽 드래그 이동 · 휠 확대 (모바일은 두 손가락)
 - **밤 풍경 / 이름표 / 자동 회전 / 지하차도 보기 / 차량 가까이 / 처음 시점** 버튼
@@ -58,6 +67,9 @@
 ### 3) 주소로 다른 동네 만들기
 카드 아래 **주소로 다른 동네 만들기**에 주소를 넣고 반경을 고른 뒤 **만들기**를 누릅니다.
 URL로 바로 열 수도 있습니다: `?addr=주소&r=반경(km)`
+
+예) 주소 칸에 `롯데월드타워` 입력 → 반경 `5 km` 선택 → **만들기**
+→ `https://muzbox1973.github.io/osm-real-buildings-3d-town/?addr=롯데월드타워&r=5`
 
 | 반경 | 불러오는 범위 | 비고 |
 |---|---|---|
@@ -93,7 +105,7 @@ URL로 바로 열 수도 있습니다: `?addr=주소&r=반경(km)`
 
 ## 로컬에서 실행하기
 
-브라우저가 파일을 직접 여는 `file://`에서도 청당동 예시는 동작합니다. 주소 모드까지 쓰려면 간단한 웹 서버로 여는 것을 권장합니다.
+브라우저가 파일을 직접 여는 `file://`에서는 외부 서버에 접속하지 못하면 청당동 예시가 열립니다. 주소 모드까지 쓰려면 간단한 웹 서버로 여는 것을 권장합니다.
 
 ```bash
 git clone https://github.com/muzbox1973/osm-real-buildings-3d-town.git
@@ -157,7 +169,9 @@ docs/screenshots/          README 스크린샷
 **OSM Real Buildings 3D Town** turns real map data into a 3D neighborhood you can drive through — with **autonomous driving, turn-by-turn navigation and traffic lights**. It is a single `index.html` (Three.js, no build step). Enter any address and pick a radius of **2 · 5 · 10 · 15 · 20 km** to generate that area.
 
 - Live demo: https://muzbox1973.github.io/osm-real-buildings-3d-town/
-- Address mode: `?addr=<address>&r=<km>` e.g. `?addr=Lotte World Tower&r=5`
+- Default view: **Lotte World Tower (Seoul), 5 km radius**, built live from OSM (1–2 min)
+- Address mode: `?addr=<address>&r=<km>` e.g. `?addr=Lotte World Tower&r=2` · `?addr=Lotte World Tower&r=10`
+- Bundled Cheongdang-dong (Cheonan) sample with the modeled underpass and ITS lane counts: `?preset` (also the automatic fallback when map servers can't be reached)
 
 ### Features
 - **Real footprints** from OpenStreetMap; heights from `building:levels`/`height`, otherwise per-type defaults. The bundled Cheongdang-dong (Cheonan, Korea) sample uses floor counts verified from sales notices and listings.

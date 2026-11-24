@@ -84,7 +84,7 @@ body.cockpit #cockpit{display:block}
   </div>
   <form id="addrForm" class="addr" autocomplete="off">
     <label for="addrIn">주소로 다른 동네 만들기</label>
-    <div class="addrRow"><input id="addrIn" placeholder="예: 천안시 동남구 청당동 / 서울시청" required>
+    <div class="addrRow"><input id="addrIn" placeholder="예: 롯데월드타워 / 천안시 동남구 청당동" required>
     <select id="radIn" aria-label="반경"><option value="2">2 km</option><option value="5">5 km</option><option value="10">10 km</option><option value="15">15 km</option><option value="20">20 km</option></select>
     <button type="submit">만들기</button></div>
     <p id="addrMsg" class="addrMsg"></p>
@@ -643,14 +643,14 @@ function frame(){const raw=Math.min(clock.getDelta(),.05),dt=raw*motion;
   requestAnimationFrame(frame);}
 if(OSM){document.querySelector('.card h1').textContent='우리 동네 3D · '+(D.place||'검색 위치');
   document.querySelector('.card p').textContent=`OpenStreetMap 실시간 데이터로 반경 ${RAD/1000} km를 만들었습니다. 층수·차로 수는 OSM에 있는 값을 쓰고, 없으면 건물·도로 종류별 추정값입니다.`+(RAD>5000?' 반경이 커서 큰 건물과 주요 도로만 불러왔습니다.':'');
-  $('credit').innerHTML='지도 데이터 © OpenStreetMap 기여자 (ODbL) · <a href="?" style="color:#2f7bff">청당동 예시로 돌아가기</a>';$('loadBar').style.width='100%';}
+  $('credit').innerHTML='지도 데이터 © OpenStreetMap 기여자 (ODbL) · <a href="?preset" style="color:#2f7bff">천안 청당동 예시 보기</a>';$('loadBar').style.width='100%';}
 document.getElementById('load').classList.remove('on');
 frame();
 }
 /* ===== 주소 → 반경 2·5·10·15·20 km 불러오기 (Nominatim + Overpass) ===== */
 const $id=id=>document.getElementById(id);
 const GH_PAGES='https://muzbox1973.github.io/osm-real-buildings-3d-town/';
-const qs=new URLSearchParams(location.search),qAddr=(qs.get('addr')||'').trim(),qR=[2,5,10,15,20].includes(+qs.get('r'))?+qs.get('r'):2;
+const qs=new URLSearchParams(location.search),qPreset=qs.has('preset'),qDef=!qPreset&&!qs.get('addr'),qAddr=qPreset?'':((qs.get('addr')||'').trim()||'롯데월드타워'),qR=[2,5,10,15,20].includes(+qs.get('r'))?+qs.get('r'):(qDef?5:2);
 const loadUI={on(){$id('load').classList.add('on');},t(m){$id('loadS').textContent=m;},p(f){$id('loadBar').style.width=Math.round(f*100)+'%';},err(m){const e=$id('loadE');e.style.color='';e.textContent=m;}};
 const NOMI='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=kr&accept-language=ko&q=';
 const OVP=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
@@ -730,7 +730,7 @@ $id('addrForm').addEventListener('submit',async e=>{e.preventDefault();const a=$
   location.search='?addr='+encodeURIComponent(a)+'&r='+r;});
 if(!window.THREE||!THREE.OrbitControls){$id('err').style.display='grid';}
 else if(qAddr){loadOSM(qAddr,qR*1000).then(D=>{try{boot(D);}catch(e){console.error(e);loadUI.err('장면을 만드는 중 오류가 났습니다: '+e.message);}})
-  .catch(e=>{loadUI.err(e.message);const a=document.createElement('a');a.href='?';a.textContent='청당동 예시로 돌아가기';$id('loadS').textContent='';$id('loadS').appendChild(a);});}
+  .catch(e=>{if(qDef){$id('load').classList.remove('on');boot({B,H,A});return;}loadUI.err(e.message);const a=document.createElement('a');a.href='?preset';a.textContent='천안 청당동 예시 보기';$id('loadS').textContent='';$id('loadS').appendChild(a);});}
 else boot({B,H,A});
 
 }
