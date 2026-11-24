@@ -694,7 +694,7 @@ function areaKind(t){if(t.leisure==='park'||t.leisure==='garden'||t.landuse==='r
   if(/^(grass|meadow|cemetery)$/.test(t.landuse||'')||/^(scrub|grassland)$/.test(t.natural||''))return'grass';if(t.landuse==='farmland')return'farmland';
   if(t.landuse==='residential')return'residential';if(t.landuse==='construction')return'construction';if(/^(commercial|retail)$/.test(t.landuse||''))return'commercial';
   if(t.landuse==='industrial')return'industrial';if(/^(school|university|college|kindergarten)$/.test(t.amenity||''))return'school';if(t.amenity==='parking')return'parking';if(t.amenity==='hospital')return'hospital';return null;}
-async function loadOSM(addr,R){loadUI.on();loadUI.t('주소를 찾고 있습니다');loadUI.p(.03);
+async function loadOSM(addr,R){loadUI.on();{const h=document.querySelector('h1');if(h)h.textContent='우리 동네 3D · '+addr;}loadUI.t('주소를 찾고 있습니다');loadUI.p(.03);
   const g=await geocode(addr),lat0=g.lat,lon0=g.lon,KX=111320*Math.cos(lat0*Math.PI/180),KZ=110950;
   const dLat=R/KZ,dLon=R/KX,lv=R<=2000?0:R<=5000?1:R<=10000?2:3,n=R<=2000?1:R<=10000?2:R<=15000?3:4,tol=1+R/5000;
   const B=[],H=[],A=[],S=[],seen=new Set(),P=gm=>gm.map(p=>[(p.lon-lon0)*KX,(lat0-p.lat)*KZ]),r1=a=>Math.round(a*10)/10;
