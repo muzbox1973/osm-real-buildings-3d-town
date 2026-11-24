@@ -2,13 +2,14 @@
 
 **한국어** · [English](#english)
 
-실제 지도 데이터로 동네를 3D로 만들고, 그 안에서 **자율주행·내비게이션·신호 대기**까지 체험하는 브라우저 앱입니다.
-설치 없이 `index.html` 하나로 돌아가며(Three.js), 주소만 넣으면 **반경 2 · 5 · 10 · 15 · 20 km** 동네를 바로 만들어 줍니다.
+주소 하나로 실제 지도 데이터를 3D 도시로 만들고, 그 안에서 **자율주행·내비게이션·신호 대기·지하철**까지 보여 주는 브라우저 앱입니다.
+설치 없이 `index.html` 하나로 돌아가며(Three.js), 주소를 넣으면 **반경 2 · 5 · 10 · 15 · 20 km**를 바로 만듭니다.
+기본 화면은 **서울 송파구 롯데월드타워 반경 5 km**입니다.
 
 - 데모(웹 버전): https://muzbox1973.github.io/osm-real-buildings-3d-town/
-- 주소 모드 예: `https://muzbox1973.github.io/osm-real-buildings-3d-town/?addr=롯데월드타워&r=5`
+- 롯데월드타워 2 km(신호등·차선까지 자세히): https://muzbox1973.github.io/osm-real-buildings-3d-town/?addr=롯데월드타워&r=2
 
-![전체 보기](docs/screenshots/overview.png)
+![롯데월드타워 반경 5 km](docs/screenshots/lotte-overview.jpg)
 
 ---
 
@@ -16,72 +17,84 @@
 
 | 기능 | 설명 |
 |---|---|
-| 실측 건물 | OpenStreetMap(OSM)의 건물 외곽선을 그대로 세웁니다. ㄱ·ㄷ자 판상형, 탑상형 아파트 모양이 실제와 같습니다. |
-| 층수 | OSM `building:levels`·`height` 값을 쓰고, 없으면 건물 종류별 기본값을 씁니다. 청당동 예시는 분양 기사·매물 정보로 확인한 층수를 넣었습니다. |
-| 도로·차로 | 도로 폭을 차로 수에 맞춰 그리고, 중앙선(황색 2줄)·차선(백색 점선)·가장자리선을 그립니다. |
-| 지하차도·고가 | 터널은 지하로, 교량은 위로 올립니다. 청당동 예시의 남부대로 지하차도는 옹벽·덮개까지 만들었습니다. |
+| 실측 건물 | OpenStreetMap(OSM)의 건물 외곽선을 그대로 세웁니다. 잠실 일대 아파트 단지, 롯데월드몰 같은 대형 건물 모양이 실제와 같습니다. |
+| 높이 | OSM `height`·`building:levels`를 쓰고, 없으면 건물 종류별 기본값을 씁니다. |
+| 랜드마크 | **롯데월드타워**는 실제 형상(높이 554.5 m, 모서리가 둥근 사각 단면이 위로 갈수록 가늘어지는 곡면, 한쪽 면의 세로 이음매, 꼭대기 4갈래 유리 랜턴)으로 따로 모델링합니다. 다른 건물도 OSM의 **3D 건물 부품**(`building:part`, `min_height`, `roof:shape` 돔·뾰족 지붕, `building:colour`)이 있으면 그대로 반영합니다. 높이 80 m 이상 통신탑·전망탑(N서울타워 등)도 탑 모양으로 세웁니다. |
+| 철도·지하철 | 지상 선로(자갈 도상·레일·침목), 고가 선로(교각), 지하 구간을 구분해 그립니다. 노선색(2호선 초록, 8호선 분홍 등)으로 지하 노선을 지면에 표시하고, **열차가 실제 선로를 따라 달립니다**. 역에는 승강장과 노선색 이름표를 붙입니다. |
+| 지하철 보기 | 버튼 하나로 지면·도로·건물을 반투명하게 만들어 땅속 지하철 터널, 지하 승강장, 달리는 열차를 봅니다. |
+| 도로·차로 | 도로 폭을 차로 수에 맞추고 중앙선(황색 2줄)·차선(백색 점선)·가장자리선을 그립니다. |
 | 신호등 | 교차로마다 가로형 **4색 신호등(적·황·녹색 좌회전 화살표·녹)**과 정지선을 세웁니다. 방향별로 직진 녹색 → 좌회전(적색+녹색 화살표) → 황색 순서이고, 주기·시차는 교차로마다 무작위입니다. |
-| 자율주행 | 지도를 두 번 클릭(출발·도착)하면 실제 도로망에서 가장 빠른 길을 찾아 달립니다. 일방통행을 지키고, 양방향 도로에서는 오른쪽 차로로만 달려 중앙선을 넘지 않습니다. |
-| 신호 대기 | 직진은 녹색, 좌회전은 녹색 화살표에만 진행하고, 그 밖에는 정지선 앞에 섭니다(대기 3초 이하). **우회전은 신호와 관계없이 진행**합니다. 앞차가 서 있으면 거리를 두고 멈춥니다. |
-| 내비게이션 | 다음 안내(좌·우회전, 유턴, 지하차도 진입, 도착)와 남은 거리, 도착 예정 시각, 현재 도로, 다음 신호를 보여 줍니다. 진행 방향이 위로 오는 미니맵도 있습니다. |
-| 시점 | 실내(운전석) · 후방(추적) · 탑뷰(내비게이션식, 진행 방향 위) · 자유 시점 |
-| 교통 | 승용차·SUV·버스·트럭이 차로별로 달리고 신호를 지키며 줄을 섭니다. |
-| 밤 풍경 | 창문 불빛과 전조등·후미등이 켜집니다. |
-| 주소 모드 | 주소 + 반경(2·5·10·15·20 km)을 고르면 OSM 데이터를 받아 같은 엔진으로 동네를 만듭니다. |
+| 자율주행 | 지도를 두 번 클릭(출발·도착)하면 실제 도로망에서 가장 빠른 길을 찾아 달립니다. 일방통행을 지키고, 오른쪽 차로로만 달려 중앙선을 넘지 않습니다. |
+| 신호 대기 | 직진은 녹색, 좌회전은 녹색 화살표에만 진행하고, 그 밖에는 정지선 앞에 섭니다(대기 3초 이하). **우회전은 신호와 관계없이 진행**합니다. |
+| 내비게이션 | 다음 안내(좌·우회전, 유턴, 지하차도 진입, 도착), 남은 거리, 도착 예정 시각, 현재 도로, 다음 신호, 진행 방향이 위로 오는 미니맵 |
+| 시점 | 실내(운전석) · 후방(추적) · 탑뷰(내비게이션식) · 자유 시점 |
+| 교통·밤 풍경 | 승용차·SUV·버스·트럭이 차로별로 달리며 신호를 지킵니다. 밤에는 창문·전조등과 롯데월드타워 랜턴에 불이 켜집니다. |
 
-| 지하차도 | 차로·중앙선 |
+| 롯데월드타워 | 지하철 보기 |
 |---|---|
-| ![지하차도](docs/screenshots/underpass.png) | ![차선](docs/screenshots/lanes.png) |
+| ![롯데월드타워](docs/screenshots/lotte-tower.jpg) | ![지하철 보기](docs/screenshots/lotte-subway.jpg) |
 | **후방(추적) 시점** | **실내(운전석) 시점** |
-| ![후방](docs/screenshots/drive-chase.png) | ![실내](docs/screenshots/drive-cockpit.png) |
-| **탑뷰(내비게이션식)** | **신호 대기** |
-| ![탑뷰](docs/screenshots/drive-top.png) | ![신호 대기](docs/screenshots/signal-wait.png) |
-| **밤 풍경** | **주소 모드 (롯데월드타워, 5 km)** |
-| ![밤](docs/screenshots/night.png) | ![주소 모드 · 롯데월드타워 5 km](docs/screenshots/address-lotteworldtower-5km.jpg) |
+| ![후방](docs/screenshots/lotte-drive-chase.jpg) | ![실내](docs/screenshots/lotte-drive-cockpit.jpg) |
+| **탑뷰(내비게이션식)** | **좌회전 신호 대기** |
+| ![탑뷰](docs/screenshots/lotte-drive-top.jpg) | ![신호 대기](docs/screenshots/lotte-signal.jpg) |
+| **철도·열차** | **밤 풍경** |
+| ![철도](docs/screenshots/lotte-rail.jpg) | ![밤](docs/screenshots/lotte-night.jpg) |
 
 ---
 
 ## 사용법
 
 ### 1) 기본 화면: 롯데월드타워 반경 5 km
-웹 버전(또는 `index.html`)을 주소 없이 열면 **롯데월드타워 반경 5 km**를 OSM에서 받아 3D로 만듭니다(1~2분).
+웹 버전을 주소 없이 열면 **롯데월드타워 반경 5 km**가 바로 열립니다. 이 데이터는 GitHub Actions가 미리 만들어 저장소(`data/lotte-5km.json`)에 넣어 두므로 외부 지도 서버 상태와 상관없이 뜹니다.
 
 | 예시 | 주소 |
 |---|---|
 | 기본 화면 (롯데월드타워 5 km) | https://muzbox1973.github.io/osm-real-buildings-3d-town/ |
-| 롯데월드타워 2 km (신호등·차선까지 자세히) | `.../?addr=롯데월드타워&r=2` |
-| 롯데월드타워 10 km (서울 동남권 전체) | `.../?addr=롯데월드타워&r=10` |
-| 천안 청당동 예시 (지하차도·실제 차로 수 포함) | `.../?preset` |
-
-> 외부 지도 서버에 접속할 수 없는 환경(Claude 아티팩트, 오프라인 `file://`)에서는 자동으로 **천안 청당동 예시**가 열립니다.
+| 롯데월드타워 2 km (신호등·차선·침목까지 자세히) | `.../?addr=롯데월드타워&r=2` |
+| 롯데월드타워 10 km (서울 동남권, 초고층·철도 포함) | `.../?addr=롯데월드타워&r=10` |
+| 다른 동네 | `.../?addr=주소&r=반경(km)` |
 
 - **마우스**: 왼쪽 드래그 회전 · 오른쪽 드래그 이동 · 휠 확대 (모바일은 두 손가락)
-- **밤 풍경 / 이름표 / 자동 회전 / 지하차도 보기 / 차량 가까이 / 처음 시점** 버튼
+- **버튼**: 밤 풍경 · 이름표 · 자동 회전 · 자율주행 · 지하철 보기 · 처음 시점
 
 ### 2) 자율주행
-1. 카드의 파란 **자율주행** 버튼을 누릅니다.
-2. 지도에서 **출발점**, 이어서 **도착점**을 클릭합니다. 클릭한 곳은 가장 가까운 도로에 붙습니다. (`Esc`로 취소)
+1. 파란 **자율주행** 버튼을 누릅니다.
+2. 지도에서 **출발점**, 이어서 **도착점**을 클릭합니다(예: 롯데월드타워 앞 → 잠실역 사거리). 클릭한 곳은 가장 가까운 도로에 붙습니다. (`Esc`로 취소)
 3. 경로가 파란 선으로 표시되고 차가 출발합니다.
 4. 아래 패널에서 **실내 · 후방 · 탑뷰 · 자유** 시점, **속도 ×1/×2/×4**, **다시 찍기**, **종료**를 고릅니다.
 
-### 3) 주소로 다른 동네 만들기
+### 3) 지하철 보기
+**지하철 보기**를 누르면 지면이 반투명해지고 2호선·8호선 같은 지하 노선의 터널, 지하 승강장, 달리는 열차가 보입니다. 다시 누르면(**지상 보기**) 원래대로 돌아옵니다. 지하 노선은 평소에도 노선색 선으로 지면에 표시됩니다.
+
+### 4) 주소로 다른 동네 만들기
 카드 아래 **주소로 다른 동네 만들기**에 주소를 넣고 반경을 고른 뒤 **만들기**를 누릅니다.
-URL로 바로 열 수도 있습니다: `?addr=주소&r=반경(km)`
 
 예) 주소 칸에 `롯데월드타워` 입력 → 반경 `5 km` 선택 → **만들기**
 → `https://muzbox1973.github.io/osm-real-buildings-3d-town/?addr=롯데월드타워&r=5`
 
 | 반경 | 불러오는 범위 | 비고 |
 |---|---|---|
-| 2 km | 모든 건물, 이면도로까지 모든 도로, 녹지, 신호등 | 그림자·가로수·차선 모두 표시 |
+| 2 km | 모든 건물·3D 건물 부품, 모든 도로, 녹지, 신호등, 철도(트램 포함) | 그림자·가로수·차선·침목 표시 |
 | 5 km | 위와 같음 (2×2 타일로 나눠 받기) | 그림자는 끔 |
-| 10 km | 큰 건물(아파트·상업·공업·학교·병원 등) + 3차로급 이상 도로 | 신호는 중심 3 km만 |
+| 10 km | 큰 건물 + 높이 60 m·20층 이상 건물 + 3차로급 이상 도로 + 철도 | 신호는 중심 3 km만 |
 | 15 km | 위와 같음, 도로는 2차로급(secondary) 이상 | 3×3 타일 |
 | 20 km | 위와 같음 | 4×4 타일, 받는 데 몇 분 걸릴 수 있음 |
 
-> 공용 Overpass 서버가 붐비면 4개 미러(overpass-api.de · private.coffee · kumi.systems · mail.ru)에 차례로 요청을 보내 먼저 오는 응답을 씁니다. 요청마다 90초 제한이 있고, 모두 실패하면 최대 4번까지 다시 시도합니다. 2 km는 보통 1분 안에 끝납니다.
+**데이터를 받는 방식**
+1. **벡터 타일(OpenFreeMap)** 과 **Overpass(OSM 원본)** 를 동시에 요청합니다.
+2. 타일이 먼저 끝나면(보통 20~40초), Overpass를 8초만 더 기다립니다. 그 안에 오면 더 자세한 Overpass 데이터(실제 차로 수·신호등 위치·노선색)로, 아니면 타일 데이터로 화면을 만듭니다.
+3. 타일 서버가 응답하지 않으면 Overpass를 기다립니다(4개 미러에 차례로 요청, 요청마다 90초 제한, 최대 4번 재시도).
 
-> **주의**: Claude 아티팩트 화면에서는 보안 정책 때문에 외부 지도 서버에 접속할 수 없어 주소 모드가 동작하지 않습니다. 이때는 화면에 나오는 링크로 웹 버전(GitHub Pages)이나 로컬 서버에서 여세요.
+타일 데이터에는 차로 수와 신호등 위치가 없어서, 차로 수는 도로 등급별 기본값으로, 신호등은 간선도로끼리 만나는 교차로에 자동으로 세웁니다. 지하철 노선색도 Overpass 데이터가 있을 때만 실제 색으로 칠해집니다.
+
+> **주의**: Claude 아티팩트 화면이나 인터넷 없이 파일로 연 경우에는 외부 지도 서버에 접속할 수 없어, 내장된 **천안 청당동 예시**가 대신 열립니다.
+
+### 5) 내장 예시: 천안 청당동 (`?preset`)
+지도 서버 없이도 돌아가는 예시 데이터입니다. 남부대로 지하차도(옹벽·덮개), 국토교통부 표준노드링크의 실제 차로 수, 분양 정보로 확인한 단지 층수가 들어 있습니다.
+
+| 청당동 예시 | 남부대로 지하차도 |
+|---|---|
+| ![청당동](docs/screenshots/cheongdang-overview.png) | ![지하차도](docs/screenshots/underpass.png) |
 
 ---
 
@@ -89,32 +102,34 @@ URL로 바로 열 수도 있습니다: `?addr=주소&r=반경(km)`
 
 | 항목 | 출처 | 비고 |
 |---|---|---|
-| 건물 외곽선·도로·녹지 | © OpenStreetMap 기여자, ODbL 1.0 (Overpass API) | 청당동 예시는 2026-11-24 조회분을 `data.js`에 저장 |
-| 차로 수 (청당동 예시) | 국토교통부 ITS 국가교통정보센터 **전국표준노드링크** (2026-11-11 기준) | 방향별 `LANES`를 OSM 도로에 매칭. 122개 도로 중 98개 매칭 |
-| 차로 수 (주소 모드) | OSM `lanes`, `lanes:forward/backward` | 없으면 도로 종류별 기본값 |
-| 층수 (청당동 예시) | 분양 기사·부동산 매물 정보 | 벽산블루밍 15층, 서희스타힐스 최고 27층, 코오롱하늘채 23층, 두산위브더파크 최고 26층, 청수한양수자인 22층, 행정타운센트럴두산위브 25층(OSM) 등 |
+| 건물·도로·녹지·철도·역 | © OpenStreetMap 기여자, ODbL 1.0 | [OpenFreeMap](https://openfreemap.org) 벡터 타일 또는 Overpass API로 실시간 조회 |
+| 노선색 | OSM 노선(route) 관계의 `colour` | 없으면 수도권 노선 이름으로 지정(1~9호선, 신분당선, 경의중앙선, 수인분당선, 공항철도 등) |
+| 롯데월드타워 형상 | 공개된 건축 개요(높이 554.5 m, 123층)를 바탕으로 한 근사 모델 | 위치·방향·밑면 크기는 OSM 외곽선 기준 |
+| 차로 수 | OSM `lanes`, `lanes:forward/backward` (Overpass) | 타일 데이터이거나 값이 없으면 도로 종류별 기본값. 청당동 예시는 국토교통부 ITS **전국표준노드링크**(2026-11-11) |
+| 신호등 | OSM `highway=traffic_signals` (Overpass) | 타일 데이터일 때는 간선도로 교차로에 추정 배치 |
+| 기본 화면 데이터 | GitHub Actions가 매달·코드 변경 때 다시 만듦 (`tools/bake.mjs`) | Overpass 우선, 실패하면 타일 |
 | 주소 검색 | Nominatim (OpenStreetMap) | 이용 정책상 초당 1회 이하 요청 |
 
 **추정값인 부분**
-- 층수를 찾지 못한 단지(예: 휴먼시아2단지, 포레나)와 OSM에 층수가 없는 건물
-- 청당동 예시의 북동쪽 단독주택가: OSM에 개별 건물이 없어 골목을 따라 근사 배치
-- 신호 주기: 실제 신호 시간이 아니라 교차로마다 무작위
-- 주소 모드의 터널: 지면을 파내지 않고 도로만 지하로 내립니다(청당동 예시의 지하차도만 옹벽·덮개까지 표현)
+- OSM에 높이가 없는 건물의 층수
+- 롯데월드타워 이외 건물의 세부 형상(OSM 3D 부품이 없으면 외곽선을 위로 올린 상자)
+- 신호 주기, 열차 운행 간격(실제 시간표가 아님, 노선 끝에서 되돌아가는 왕복 운행)
+- 타일 데이터로 만든 경우의 차로 수·신호등 위치·지하철 노선색
+- 지하 구간 깊이(지하철 약 16 m, 일반 철도 약 12 m로 고정), 도로 터널은 지면을 파내지 않고 도로만 내림
 
 ---
 
 ## 로컬에서 실행하기
 
-브라우저가 파일을 직접 여는 `file://`에서는 외부 서버에 접속하지 못하면 청당동 예시가 열립니다. 주소 모드까지 쓰려면 간단한 웹 서버로 여는 것을 권장합니다.
-
 ```bash
 git clone https://github.com/muzbox1973/osm-real-buildings-3d-town.git
 cd osm-real-buildings-3d-town
 python -m http.server 8000
-# 브라우저에서 http://localhost:8000/  또는  http://localhost:8000/?addr=롯데월드타워&r=5
+# 브라우저에서 http://localhost:8000/  (롯데월드타워 5 km)
+#           http://localhost:8000/?addr=롯데월드타워&r=2
 ```
 
-### 청당동 차로 수 다시 만들기 (선택)
+### 청당동 예시의 차로 수 다시 만들기 (선택)
 ```bash
 pip install pyshp pyproj
 # its.go.kr 에서 NODELINKDATA.zip 을 받아 MOCT_LINK.* 를 푼 뒤
@@ -127,38 +142,42 @@ python tools/match_lanes.py   # data.js 의 도로에 방향별 차로 수를 �
 ## 파일 구조
 
 ```
-index.html                 앱 전체 (렌더링·도로망·자율주행·내비게이션·신호·주소 모드)
-data.js                    청당동 예시 데이터 (B: 건물, H: 도로, A: 면)
+index.html                 앱 전체 (렌더링·도로망·철도·랜드마크·자율주행·내비게이션·신호·주소 모드·타일 디코더)
+data.js                    내장 예시(천안 청당동) 데이터 (B: 건물, H: 도로, A: 면)
+data/lotte-5km.json        기본 화면(롯데월드타워 5 km) 데이터 — GitHub Actions가 생성
+tools/bake.mjs             기본 화면 데이터 생성 스크립트 (헤드리스 브라우저로 앱의 ?dump=1 실행)
+.github/workflows/bake.yml 매달 1일·index.html 변경 시 기본 화면 데이터 다시 만들기
 tools/extract_nodelink.py  표준노드링크 shapefile → 범위 추출 JSON
 tools/match_lanes.py       표준노드링크 차로 수 → OSM 도로 매칭
 docs/screenshots/          README 스크린샷
 ```
 
-`data.js` 형식 (좌표는 기준점에서 동쪽 +x, 남쪽 +z 미터)
-- `B`: `[유형, 층수, 이름, [x,z,...]]` — 유형 `a` 아파트, `c` 상업, `s` 학교, `h` 병원, `y` 기타 …
-- `H`: `[도로종류, 0|1터널|2교량, OSM차로, 이름, [x,z,...], [정방향차로, 역방향차로]]` (주소 모드는 7번째에 일방통행 여부)
-- `A`: `[면종류, 이름, [x,z,...]]` — park, wood, residential, school, pitch, parking, water …
+주소 모드에서 내부적으로 쓰는 데이터 (좌표는 기준점에서 동쪽 +x, 남쪽 +z 미터)
+- `B`: `[유형, 층수, 이름, [x,z,...], 높이m, 최저높이m, 지붕모양, 외벽색, 부품여부, 지붕높이, 지붕색]`
+- `H`: `[도로종류, 0|1터널|2교량, OSM차로, 이름, [x,z,...], [정방향차로, 역방향차로], 일방통행]`
+- `RLW`: `[철도종류, 0지상|1지하|2고가, 노선색, 이름, [x,z,...]]` · `ST`: `[역 이름, x, z, 종류]` · `TW`: `[x, z, 높이, 이름]`
 
 ---
 
 ## 기술 구성
 
-- **렌더링**: Three.js r128 (CDN), 건물은 재질별로 하나의 메시로 합쳐 수만 채도 그립니다.
-- **도로망**: OSM 도로를 교차점·끝점 기준으로 이어 그래프를 만들고(공간 격자로 가속), 터널·교량과 평면 도로는 서로 잇지 않습니다.
-- **경로**: Dijkstra(도로 종류별 제한 속도로 시간 가중), 일방통행 준수, 실패 시 양방향 그래프로 재시도.
-- **차로 주행**: 차로 수와 차로 폭(3.0~3.5 m)으로 진행 방향 오른쪽 차로 중심을 계산해 중앙선을 넘지 않게 달립니다.
-- **신호**: 교차로마다 두 축(A/B)이 녹색→황색(3초)→적색으로 엇갈립니다. 자율주행 차가 정지선에 서면 대기 시간이 3초를 넘지 않도록 그 교차로의 신호를 앞당깁니다.
-- **주소 모드**: Nominatim으로 좌표를 찾고 Overpass API로 반경 안 데이터를 타일 단위로 받아 같은 엔진으로 만듭니다.
+- **렌더링**: Three.js r128 (CDN). 건물은 재질별로 하나의 메시로 합쳐 수만 채도 그립니다.
+- **랜드마크**: 이름으로 롯데월드타워를 찾아 외곽선의 중심·방향·크기에 맞춰 곡면 단면(초타원)을 높이별로 쌓아(로프트) 만듭니다. OSM `building:part`가 있으면 외곽선 대신 부품을 `min_height`~`height`로 세우고, `roof:shape`(돔·양파·뾰족·모임 지붕)를 지붕 면으로 만듭니다.
+- **철도**: 선로 끝점의 연결 관계로 지하↔지상, 지상↔고가 경사 구간을 자동으로 만들고, 같은 노선색의 선로를 이어 긴 노선을 구성해 열차(지하철 6량, 일반 철도 8량, 경전철 2량)를 왕복 운행합니다. 열차는 인스턴스 메시로 한 번에 그립니다.
+- **도로망·경로**: OSM 도로를 교차점 기준으로 이어 그래프를 만들고 Dijkstra로 최단 시간 경로를 찾습니다. 차로 수와 차로 폭으로 오른쪽 차로 중심을 계산합니다.
+- **신호**: 교차로마다 두 축(A/B)이 직진 녹색 → 좌회전 화살표 → 황색으로 엇갈립니다. 자율주행 차가 정지선에 서면 대기가 3초를 넘지 않도록 그 교차로 신호를 앞당깁니다.
+- **주소 모드**: Nominatim으로 좌표를 찾은 뒤, OpenFreeMap 벡터 타일(MVT, 앱에 내장한 작은 디코더로 해석)과 Overpass API를 동시에 받아 먼저 준비되는 쪽(타일 뒤 8초까지는 Overpass 우선)으로 장면을 만듭니다.
+- **자동화 훅**: `window.town3d`(카메라·시점·`tick()` 시뮬레이션 진행 등)로 스크린샷·테스트를 자동화할 수 있습니다.
 
 ## 알려진 한계
-- 좌회전 전용 신호, 보행자 신호, 차선 변경은 없습니다.
-- 다른 차와의 충돌은 단순한 앞차 따라가기만 합니다.
-- 큰 반경(15·20 km)은 데이터 양 때문에 받는 데 시간이 걸리고, 저사양 기기에서는 느릴 수 있습니다.
-- Overpass 공개 서버가 붐비면 응답이 늦거나 실패할 수 있습니다(자동으로 다른 서버를 시도).
+- 롯데월드타워 외 랜드마크는 OSM 3D 부품 데이터 수준만큼만 표현됩니다.
+- 열차 시간표·정차, 보행자 신호, 차선 변경은 없습니다.
+- 큰 반경(15·20 km)은 받는 데 시간이 걸리고 저사양 기기에서는 느릴 수 있습니다.
+- Overpass 공개 서버가 멈추면 타일 데이터로 만들어지므로 차로 수·신호등·노선색이 추정값이 됩니다.
 
 ## 출처 표기
 - 지도 데이터 © [OpenStreetMap](https://www.openstreetmap.org/copyright) 기여자, [ODbL 1.0](https://opendatacommons.org/licenses/odbl/)
-- 차로 수: 국토교통부 ITS 국가교통정보센터 [전국표준노드링크](https://www.its.go.kr/nodelink/nodelinkRef)
+- 차로 수(청당동 예시): 국토교통부 ITS 국가교통정보센터 [전국표준노드링크](https://www.its.go.kr/nodelink/nodelinkRef)
 - 3D 엔진: [three.js](https://threejs.org/) (MIT)
 
 ---
@@ -166,33 +185,31 @@ docs/screenshots/          README 스크린샷
 <a id="english"></a>
 ## English
 
-**OSM Real Buildings 3D Town** turns real map data into a 3D neighborhood you can drive through — with **autonomous driving, turn-by-turn navigation and traffic lights**. It is a single `index.html` (Three.js, no build step). Enter any address and pick a radius of **2 · 5 · 10 · 15 · 20 km** to generate that area.
+**OSM Real Buildings 3D Town** turns real map data into a 3D city you can drive through — with **autonomous driving, turn-by-turn navigation, traffic lights, landmarks and subways**. It is a single `index.html` (Three.js, no build step). Enter any address and pick a radius of **2 · 5 · 10 · 15 · 20 km**. The default view is **Lotte World Tower, Seoul, 5 km radius**.
 
 - Live demo: https://muzbox1973.github.io/osm-real-buildings-3d-town/
-- Default view: **Lotte World Tower (Seoul), 5 km radius**, built live from OSM (1–2 min)
-- Address mode: `?addr=<address>&r=<km>` e.g. `?addr=Lotte World Tower&r=2` · `?addr=Lotte World Tower&r=10`
-- Bundled Cheongdang-dong (Cheonan) sample with the modeled underpass and ITS lane counts: `?preset` (also the automatic fallback when map servers can't be reached)
+- Detailed 2 km view: `?addr=Lotte World Tower&r=2` · wider: `?addr=Lotte World Tower&r=10`
+- Bundled offline sample (Cheongdang-dong, Cheonan) with a modeled underpass and ITS lane counts: `?preset` — also the automatic fallback when map servers can't be reached (e.g. inside a Claude artifact)
 
 ### Features
-- **Real footprints** from OpenStreetMap; heights from `building:levels`/`height`, otherwise per-type defaults. The bundled Cheongdang-dong (Cheonan, Korea) sample uses floor counts verified from sales notices and listings.
-- **Lane-accurate roads**: road width follows lane count; yellow double center lines, white dashed lane lines and edge lines. The sample uses per-direction lane counts from the Korean national standard node-link dataset (ITS, 2026-11-11).
-- **Underpasses and bridges**: tunnels go below ground, bridges rise on piers. The sample's Nambu-daero underpass has retaining walls and a covered section.
-- **Traffic lights**: Korean 4-lamp heads (red, yellow, green left arrow, green). Each approach runs green (straight) → left arrow (red + arrow) → yellow, with randomized cycles and offsets, stop lines, and queuing traffic (sedans, SUVs, buses, trucks).
-- **Autonomous driving**: click a start and a destination; the car routes over the real road graph (Dijkstra, one-way aware), stays in the right-hand lane (never crosses the center line), goes straight only on green and turns left only on the green arrow (waits are capped at 3 seconds), turns right without waiting for the signal and keeps distance from the car ahead.
-- **Navigation HUD**: next maneuver (left/right/U-turn/underpass/arrival), remaining distance, ETA, current road, next signal, heading-up mini map.
-- **Camera views**: cockpit, chase, navigation-style top view, free orbit. Night mode with lit windows and headlights.
+- **Real footprints** from OpenStreetMap; heights from `height`/`building:levels`, otherwise per-type defaults.
+- **Landmarks**: Lotte World Tower is modeled to its real form — 554.5 m, a rounded-square section tapering in a continuous curve, a vertical seam on one face and a four-petal glass lantern on top, lit at night. Other buildings use OSM **Simple 3D Buildings** data when present (`building:part`, `min_height`, `roof:shape` dome/onion/pyramidal, `building:colour`). Towers of 80 m or more (e.g. N Seoul Tower) get a tower model.
+- **Railways & subways**: surface track (ballast, rails, sleepers), viaducts on piers and underground sections, with automatic ramps between them. Underground lines are traced on the ground in their line colours (from OSM route relations, or Seoul line names), **trains run along the real tracks**, and stations get platforms and colour-coded labels.
+- **Subway view (x-ray)**: makes the ground, roads and buildings translucent to reveal tunnels, underground platforms and moving trains.
+- **Lane-accurate roads**: road width follows lane count; yellow double center lines, white dashed lane lines and edge lines.
+- **Traffic lights**: Korean 4-lamp heads (red, yellow, green left arrow, green). Each approach runs green (straight) → left arrow → yellow, with randomized cycles and offsets.
+- **Autonomous driving**: click a start and a destination; the car routes over the real road graph (Dijkstra, one-way aware), stays in the right-hand lane, goes straight only on green, turns left only on the green arrow (waits capped at 3 s) and turns right without waiting.
+- **Navigation HUD** and **camera views** (cockpit, chase, navigation-style top view, free). Night mode with lit windows, headlights and the tower lantern.
 
-### Radius levels (address mode)
+### Radius levels
 | Radius | Data loaded |
 |---|---|
-| 2 km | all buildings, all drivable roads, green areas, traffic signals |
+| 2 km | all buildings and building parts, all drivable roads, green areas, traffic signals, all railways incl. trams |
 | 5 km | same, fetched as 2×2 tiles (shadows off) |
-| 10 km | large buildings (apartments, commercial, industrial, schools, hospitals…) + tertiary and above |
-| 15 / 20 km | large buildings + secondary and above, 3×3 / 4×4 tiles |
+| 10 km | large buildings + any building ≥ 60 m or ≥ 20 floors + tertiary roads and above + railways |
+| 15 / 20 km | same with secondary roads and above, 3×3 / 4×4 tiles |
 
-> If the public Overpass servers are busy, requests go to four mirrors with staggered starts and the first answer wins (90 s per request, up to 4 rounds). A 2 km area usually loads within a minute.
-
-> Address mode needs network access to Nominatim and Overpass. It does not work inside a Claude artifact (blocked by its content security policy); use the GitHub Pages version or a local web server.
+> Data comes from **OpenFreeMap vector tiles** and the **Overpass API** requested in parallel. When the tiles are done, Overpass gets 8 more seconds; if it answers, its richer data (real lane counts, signal positions, line colours) is used, otherwise the tile data is. With tiles, lane counts default by road class, signals are placed at arterial intersections, and subway lines use a default colour. The default view loads a pre-baked `data/lotte-5km.json` generated by GitHub Actions (`tools/bake.mjs`), so it opens even when map servers are down.
 
 ### Run locally
 ```bash
@@ -200,8 +217,8 @@ python -m http.server 8000   # then open http://localhost:8000/
 ```
 
 ### Data & accuracy
-- Map data © OpenStreetMap contributors (ODbL). Lane counts for the sample: MOLIT ITS national standard node-link.
-- Estimated parts: missing floor counts, the detached-house block in the sample (not mapped in OSM), signal timings (random), tunnels in address mode (road lowered without cutting the ground).
+- Map data © OpenStreetMap contributors (ODbL), served via OpenFreeMap tiles or the Overpass API. Line colours from OSM route relations. Lotte World Tower form is an approximation based on its published specifications; position, orientation and base size come from the OSM footprint.
+- Estimated parts: missing heights, detailed shapes of other buildings without OSM 3D parts, signal timings and train headways (random, trains shuttle back and forth), tunnel depths (subway ~16 m, rail ~12 m).
 
 ### Known limitations
-No dedicated left-turn or pedestrian phases, no lane changes, simple car-following only; large radii take time to download and may be slow on low-end devices.
+No train timetables or station stops, no pedestrian phases or lane changes; large radii take time to download and may be slow on low-end devices.
