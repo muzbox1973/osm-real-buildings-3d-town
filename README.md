@@ -20,9 +20,9 @@
 | 층수 | OSM `building:levels`·`height` 값을 쓰고, 없으면 건물 종류별 기본값을 씁니다. 청당동 예시는 분양 기사·매물 정보로 확인한 층수를 넣었습니다. |
 | 도로·차로 | 도로 폭을 차로 수에 맞춰 그리고, 중앙선(황색 2줄)·차선(백색 점선)·가장자리선을 그립니다. |
 | 지하차도·고가 | 터널은 지하로, 교량은 위로 올립니다. 청당동 예시의 남부대로 지하차도는 옹벽·덮개까지 만들었습니다. |
-| 신호등 | 교차로마다 가로형 3구 신호등과 정지선을 세우고, 교차로마다 주기·시차를 무작위로 줍니다. |
+| 신호등 | 교차로마다 가로형 **4색 신호등(적·황·녹색 좌회전 화살표·녹)**과 정지선을 세웁니다. 방향별로 직진 녹색 → 좌회전(적색+녹색 화살표) → 황색 순서이고, 주기·시차는 교차로마다 무작위입니다. |
 | 자율주행 | 지도를 두 번 클릭(출발·도착)하면 실제 도로망에서 가장 빠른 길을 찾아 달립니다. 일방통행을 지키고, 양방향 도로에서는 오른쪽 차로로만 달려 중앙선을 넘지 않습니다. |
-| 신호 대기 | 적색이면 정지선 앞에 서고, 신호 대기는 3초를 넘지 않습니다. 앞차가 서 있으면 거리를 두고 멈춥니다. |
+| 신호 대기 | 직진은 녹색, 좌회전은 녹색 화살표에만 진행하고, 그 밖에는 정지선 앞에 섭니다(대기 3초 이하). **우회전은 신호와 관계없이 진행**합니다. 앞차가 서 있으면 거리를 두고 멈춥니다. |
 | 내비게이션 | 다음 안내(좌·우회전, 유턴, 지하차도 진입, 도착)와 남은 거리, 도착 예정 시각, 현재 도로, 다음 신호를 보여 줍니다. 진행 방향이 위로 오는 미니맵도 있습니다. |
 | 시점 | 실내(운전석) · 후방(추적) · 탑뷰(내비게이션식, 진행 방향 위) · 자유 시점 |
 | 교통 | 승용차·SUV·버스·트럭이 차로별로 달리고 신호를 지키며 줄을 섭니다. |
@@ -177,8 +177,8 @@ docs/screenshots/          README 스크린샷
 - **Real footprints** from OpenStreetMap; heights from `building:levels`/`height`, otherwise per-type defaults. The bundled Cheongdang-dong (Cheonan, Korea) sample uses floor counts verified from sales notices and listings.
 - **Lane-accurate roads**: road width follows lane count; yellow double center lines, white dashed lane lines and edge lines. The sample uses per-direction lane counts from the Korean national standard node-link dataset (ITS, 2026-11-11).
 - **Underpasses and bridges**: tunnels go below ground, bridges rise on piers. The sample's Nambu-daero underpass has retaining walls and a covered section.
-- **Traffic lights** at intersections with randomized cycles and offsets, stop lines, and queuing traffic (sedans, SUVs, buses, trucks).
-- **Autonomous driving**: click a start and a destination; the car routes over the real road graph (Dijkstra, one-way aware), stays in the right-hand lane (never crosses the center line), stops at red lights (waits are capped at 3 seconds) and keeps distance from the car ahead.
+- **Traffic lights**: Korean 4-lamp heads (red, yellow, green left arrow, green). Each approach runs green (straight) → left arrow (red + arrow) → yellow, with randomized cycles and offsets, stop lines, and queuing traffic (sedans, SUVs, buses, trucks).
+- **Autonomous driving**: click a start and a destination; the car routes over the real road graph (Dijkstra, one-way aware), stays in the right-hand lane (never crosses the center line), goes straight only on green and turns left only on the green arrow (waits are capped at 3 seconds), turns right without waiting for the signal and keeps distance from the car ahead.
 - **Navigation HUD**: next maneuver (left/right/U-turn/underpass/arrival), remaining distance, ETA, current road, next signal, heading-up mini map.
 - **Camera views**: cockpit, chase, navigation-style top view, free orbit. Night mode with lit windows and headlights.
 
