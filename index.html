@@ -819,7 +819,7 @@ if(OSM){document.querySelector('.card h1').textContent='우리 동네 3D · '+(D
   document.querySelector('.card p').textContent=`OpenStreetMap 실시간 데이터로 반경 ${RAD/1000} km를 만들었습니다. 층수·차로 수는 OSM에 있는 값을 쓰고, 없으면 건물·도로 종류별 추정값입니다.`+(RAD>5000?' 반경이 커서 큰 건물과 주요 도로만 불러왔습니다.':'');
   $('credit').innerHTML='지도 데이터 © OpenStreetMap 기여자 (ODbL) · <a href="?preset" style="color:#2f7bff">천안 청당동 예시 보기</a>';$('loadBar').style.width='100%';}
 document.getElementById('load').classList.remove('on');
-window.town3d={D,camera,controls,view,home,setXray,setNight,setView,startRouteAt,ego,HIDE,LMK,RWD,get simT(){return simT}};
+window.town3d={D,camera,controls,view,home,setXray,setNight,setView,startRouteAt,ego,HIDE,LMK,RWD,tick(n=1,dt=1/30){for(let i=0;i<n;i++){const m=ego.on?ego.mult:1;simT+=dt*m;updateSignals();npcStep(dt*m);railStep(simT);updateDrive(dt);}if(!ego.on||ego.view==='free')controls.update();renderer.render(scene,camera);placeLabels();},get simT(){return simT}};
 frame();
 }
 /* ===== 주소 → 반경 2·5·10·15·20 km 불러오기 (Nominatim + Overpass) ===== */
