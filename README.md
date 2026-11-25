@@ -3,11 +3,11 @@
 **한국어** · [English](#english)
 
 주소 하나로 실제 지도 데이터를 3D 도시로 만들고, 그 안에서 **자율주행·내비게이션·신호 대기·지하철**까지 보여 주는 브라우저 앱입니다.
-설치 없이 `index.html` 하나로 돌아가며(Three.js), 주소를 넣으면 **반경 2 · 5 · 10 · 15 · 20 km**를 바로 만듭니다.
+설치 없이 `index.html` 하나로 돌아가며(Three.js), 주소를 넣으면 **반경 1 · 3 · 5 km**를 바로 만듭니다.
 기본 화면은 **서울 송파구 롯데월드타워 반경 5 km**입니다.
 
 - 데모(웹 버전): https://muzbox1973.github.io/osm-real-buildings-3d-town/
-- 롯데월드타워 2 km(신호등·차선까지 자세히): https://muzbox1973.github.io/osm-real-buildings-3d-town/?addr=롯데월드타워&r=2
+- 롯데월드타워 1 km(가까이서 자세히): https://muzbox1973.github.io/osm-real-buildings-3d-town/?addr=롯데월드타워&r=1
 
 ![롯데월드타워 반경 5 km](docs/screenshots/lotte-overview.jpg)
 
@@ -55,9 +55,9 @@
 | 예시 | 주소 |
 |---|---|
 | 기본 화면 (롯데월드타워 5 km) | https://muzbox1973.github.io/osm-real-buildings-3d-town/ |
-| 롯데월드타워 2 km (신호등·차선·침목까지 자세히) | `.../?addr=롯데월드타워&r=2` |
-| 롯데월드타워 10 km (서울 동남권, 초고층·철도 포함) | `.../?addr=롯데월드타워&r=10` |
-| 다른 동네 | `.../?addr=주소&r=반경(km)` |
+| 롯데월드타워 1 km (가까이서 자세히) | `.../?addr=롯데월드타워&r=1` |
+| 롯데월드타워 3 km (잠실 일대) | `.../?addr=롯데월드타워&r=3` |
+| 다른 동네 | `.../?addr=주소&r=반경(1·3·5)` |
 
 - **마우스**: 왼쪽 드래그 회전 · 오른쪽 드래그 이동 · 휠 확대 (모바일은 두 손가락)
 - **버튼**: 밤 풍경 · 이름표 · 자동 회전 · 자율주행 · 지하철 보기 · 처음 시점
@@ -79,11 +79,11 @@
 
 | 반경 | 불러오는 범위 | 비고 |
 |---|---|---|
-| 2 km | 모든 건물·3D 건물 부품, 모든 도로, 녹지, 신호등, 철도(트램 포함) | 그림자·가로수·차선·침목 표시 |
+| 1 km | 모든 건물·3D 건물 부품, 모든 도로·보행로, 녹지, 신호등, 철도(트램 포함) | 그림자·가로수·차선·침목 표시 |
+| 3 km | 위와 같음 (2×2 타일로 나눠 받기) | 그림자·가로수·차선 표시 |
 | 5 km | 위와 같음 (2×2 타일로 나눠 받기) | 그림자는 끔 |
-| 10 km | 큰 건물 + 높이 60 m·20층 이상 건물 + 3차로급 이상 도로 + 철도 | 신호는 중심 3 km만 |
-| 15 km | 위와 같음, 도로는 2차로급(secondary) 이상 | 3×3 타일 |
-| 20 km | 위와 같음 | 4×4 타일, 받는 데 몇 분 걸릴 수 있음 |
+
+반경은 1·3·5 km 세 가지만 고를 수 있습니다. 주소창에 다른 값(`r=2`, `r=10` 등)을 넣으면 가장 가까운 값으로 바뀝니다(5 km보다 크면 5 km).
 
 **데이터를 받는 방식**
 1. **벡터 타일(OpenFreeMap)** 과 **Overpass(OSM 원본)** 를 동시에 요청합니다.
@@ -134,7 +134,7 @@ git clone https://github.com/muzbox1973/osm-real-buildings-3d-town.git
 cd osm-real-buildings-3d-town
 python -m http.server 8000
 # 브라우저에서 http://localhost:8000/  (롯데월드타워 5 km)
-#           http://localhost:8000/?addr=롯데월드타워&r=2
+#           http://localhost:8000/?addr=롯데월드타워&r=1
 ```
 
 ---
@@ -169,7 +169,7 @@ docs/screenshots/          README 스크린샷
 ## 알려진 한계
 - 롯데월드타워 외 랜드마크는 OSM 3D 부품 데이터 수준만큼만 표현됩니다.
 - 열차 시간표·정차, 보행자 신호, 차선 변경은 없습니다.
-- 큰 반경(15·20 km)은 받는 데 시간이 걸리고 저사양 기기에서는 느릴 수 있습니다.
+- 5 km는 받는 데 시간이 걸리고 저사양 기기에서는 느릴 수 있습니다.
 - Overpass 공개 서버가 멈추면 타일 데이터로 만들어지므로 차로 수·신호등·노선색이 추정값이 됩니다.
 
 ## 출처 표기
@@ -181,10 +181,10 @@ docs/screenshots/          README 스크린샷
 <a id="english"></a>
 ## English
 
-**OSM Real Buildings 3D Town** turns real map data into a 3D city you can drive through — with **autonomous driving, turn-by-turn navigation, traffic lights, landmarks and subways**. It is a single `index.html` (Three.js, no build step). Enter any address and pick a radius of **2 · 5 · 10 · 15 · 20 km**. The default view is **Lotte World Tower, Seoul, 5 km radius**.
+**OSM Real Buildings 3D Town** turns real map data into a 3D city you can drive through — with **autonomous driving, turn-by-turn navigation, traffic lights, landmarks and subways**. It is a single `index.html` (Three.js, no build step). Enter any address and pick a radius of **1 · 3 · 5 km**. The default view is **Lotte World Tower, Seoul, 5 km radius**.
 
 - Live demo: https://muzbox1973.github.io/osm-real-buildings-3d-town/
-- Detailed 2 km view: `?addr=Lotte World Tower&r=2` · wider: `?addr=Lotte World Tower&r=10`
+- Detailed 1 km view: `?addr=Lotte World Tower&r=1` · 3 km: `?addr=Lotte World Tower&r=3`
 - The default view ships with the repo (`data.js`, rebuilt by GitHub Actions), so it also opens from a local file or inside a Claude artifact; only address mode needs the map servers.
 
 ### Features
@@ -200,10 +200,11 @@ docs/screenshots/          README 스크린샷
 ### Radius levels
 | Radius | Data loaded |
 |---|---|
-| 2 km | all buildings and building parts, all drivable roads, green areas, traffic signals, all railways incl. trams |
+| 1 km | all buildings and building parts, all drivable roads and footpaths, green areas, traffic signals, all railways incl. trams |
+| 3 km | same, fetched as 2×2 tiles (shadows, trees and lane lines on) |
 | 5 km | same, fetched as 2×2 tiles (shadows off) |
-| 10 km | large buildings + any building ≥ 60 m or ≥ 20 floors + tertiary roads and above + railways |
-| 15 / 20 km | same with secondary roads and above, 3×3 / 4×4 tiles |
+
+Only 1, 3 and 5 km are offered; any other `r` in the URL snaps to the nearest of them (anything above 5 becomes 5).
 
 > Data comes from **OpenFreeMap vector tiles** and the **Overpass API** requested in parallel. When the tiles are done, Overpass gets 8 more seconds; if it answers, its richer data (real lane counts, signal positions, line colours) is used, otherwise the tile data is. With tiles, lane counts default by road class, signals are placed at arterial intersections, and subway lines use a default colour. The default view loads a pre-baked `data.js` generated by GitHub Actions (`tools/bake.mjs`), so it opens even when map servers are down.
 
