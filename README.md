@@ -18,7 +18,7 @@
 | 기능 | 설명 |
 |---|---|
 | 실측 건물 | OpenStreetMap(OSM)의 건물 외곽선을 그대로 세웁니다. 잠실 일대 아파트 단지, 롯데월드몰 같은 대형 건물 모양이 실제와 같습니다. |
-| 높이 | OSM `height`·`building:levels`를 쓰고, 없으면 건물 종류별 기본값을 씁니다. |
+| 높이 | OSM `height`·`building:levels`를 쓰고, 없으면 건물 종류별 기본값을 씁니다. **아파트는 층수 정보가 없으면 15층**으로 세웁니다. 건물 종류가 '아파트'로 표시되지 않았어도 아파트 단지 안의 동, 동 번호 이름(101동 등), 판상형 동 모양이면 아파트로 판별합니다. |
 | 랜드마크 | **롯데월드타워**는 실제 형상(높이 554.5 m, 모서리가 둥근 사각 단면이 위로 갈수록 가늘어지는 곡면, 한쪽 면의 세로 이음매, 꼭대기 4갈래 유리 랜턴)으로 따로 모델링합니다. 다른 건물도 OSM의 **3D 건물 부품**(`building:part`, `min_height`, `roof:shape` 돔·뾰족 지붕, `building:colour`)이 있으면 그대로 반영합니다. 높이 80 m 이상 통신탑·전망탑(N서울타워 등)도 탑 모양으로 세웁니다. |
 | 철도·지하철 | 지상 선로(자갈 도상·레일·침목), 고가 선로(교각), 지하 구간을 구분해 그립니다. 노선색(2호선 초록, 8호선 분홍 등)으로 지하 노선을 지면에 표시하고, **열차가 실제 선로를 따라 달립니다**. 역에는 승강장과 노선색 이름표를 붙입니다. |
 | 지하철 보기 | 버튼 하나로 지면·도로·건물을 반투명하게 만들어 땅속 지하철 터널, 지하 승강장, 달리는 열차를 봅니다. |
@@ -173,7 +173,7 @@ docs/screenshots/          README 스크린샷
 - The default view ships with the repo (`data.js`, rebuilt by GitHub Actions), so it also opens from a local file or inside a Claude artifact; only address mode needs the map servers.
 
 ### Features
-- **Real footprints** from OpenStreetMap; heights from `height`/`building:levels`, otherwise per-type defaults.
+- **Real footprints** from OpenStreetMap; heights from `height`/`building:levels`, otherwise per-type defaults. Apartments without floor data get 15 floors; blocks inside apartment complexes, block-number names (e.g. "101동") and slab-shaped footprints count as apartments even when not tagged so.
 - **Landmarks**: Lotte World Tower is modeled to its real form — 554.5 m, a rounded-square section tapering in a continuous curve, a vertical seam on one face and a four-petal glass lantern on top, lit at night. Other buildings use OSM **Simple 3D Buildings** data when present (`building:part`, `min_height`, `roof:shape` dome/onion/pyramidal, `building:colour`). Towers of 80 m or more (e.g. N Seoul Tower) get a tower model.
 - **Railways & subways**: surface track (ballast, rails, sleepers), viaducts on piers and underground sections, with automatic ramps between them. Underground lines are traced on the ground in their line colours (from OSM route relations, or Seoul line names), **trains run along the real tracks**, and stations get platforms and colour-coded labels.
 - **Subway view (x-ray)**: makes the ground, roads and buildings translucent to reveal tunnels, underground platforms and moving trains.
