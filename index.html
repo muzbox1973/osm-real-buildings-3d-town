@@ -637,11 +637,27 @@ H.map(h=>{if(!['motorway','trunk','primary','secondary','tertiary'].includes(h[0
    return Math.hypot(f[0],f[1])<Math.min(RAD*.9,4500)&&L>220?[f,laneOf(h).one?oneLanes(h):twoLanes(h),Math.max(1,Math.min(4,Math.round(L/400))),[h[0]==='tertiary'?9:13,h[0]==='tertiary'?13:20],false,h[0]!=='tertiary',L,wayProf(h)]:null;}).filter(Boolean).sort((a,b)=>b[6]-a[6]).slice(0,RAD<=2500?40:70)
  .forEach(([f,lanes,n,sp,main,big,,prof])=>{const p=mkPath(f);for(const[o,dir]of lanes.slice(0,4))for(let k=0;k<n;k++){if(cars.length>=(RAD<=2500?220:300))return;
    const q=rnd(),kind=(main||big)&&q<.06?'bus':(main||big)&&q<.12?'truck':q<.32?'suv':'sedan';
-   const m=makeVehicle(kind,kind==='bus'?pick(busCols):pick(carCols));
+   const m=makeVehicle(kind,kind==='bus'?pick(busCols):pick(carCols));m.userData.kind=kind;
    cars.push({m,p,o,dir,main,prof,d:p.tot*(k+rnd()*.6)/n,v:R(sp[0],sp[1])*(kind==='bus'||kind==='truck'?.85:1)});}});
 function placeCar(c){const[x,z,u0,v0]=at(c.p,c.d),ux=u0*c.dir,uz=v0*c.dir,px=x-uz*c.o,pz=z+ux*c.o;
   c.m.position.set(px,.12+(c.main?under(px)+bridgeY(px):0)+(c.prof?c.prof(((c.d%c.p.tot)+c.p.tot)%c.p.tot):0),pz);c.m.rotation.y=-Math.atan2(uz,ux);}
 cars.forEach(placeCar);
+/* 카메라가 보는 곳으로 차량을 옮겨 와 어디를 보든 도로에 차가 다니게 한다 */
+const NPG=new Map(),NPC=200;{const TY={motorway:[25,13,20],trunk:[25,13,20],primary:[30,12,18],secondary:[35,11,16],tertiary:[50,9,13],unclassified:[110,7,10],residential:[140,6,9]};
+  for(const h of H){const t=TY[h[0]];if(!t||h[1])continue;const f=h[4];let L=0;for(let i=2;i<f.length;i+=2)L+=Math.hypot(f[i]-f[i-2],f[i+1]-f[i-1]);if(L<60)continue;
+    const r={h,f,L,sp:[t[1],t[2]],big:t[0]<=35,p:mkPath(f),lanes:null,prof:null};
+    for(let d=10;d<L-10;d+=t[0]){const q=at(r.p,d);const k=Math.floor(q[0]/NPC)+','+Math.floor(q[1]/NPC);let a=NPG.get(k);if(!a)NPG.set(k,a=[]);a.push([r,d,q[0],q[1]]);}}}
+let npT=0;function npcRecycle(force){const t=controls.target,R=Math.max(350,Math.min(2600,camera.position.distanceTo(t)*1.15)),cand=[];
+  const c0=Math.floor((t.x-R)/NPC),c1=Math.floor((t.x+R)/NPC),r0=Math.floor((t.z-R)/NPC),r1=Math.floor((t.z+R)/NPC);
+  for(let i=c0;i<=c1;i++)for(let j=r0;j<=r1;j++){const a=NPG.get(i+','+j);if(a)for(const s of a)if(Math.hypot(s[2]-t.x,s[3]-t.z)<R)cand.push(s);}
+  if(!cand.length)return;let moved=0;const lim=force?cars.length:24;
+  for(const c of cars){if(moved>=lim)break;const ps=c.m.position;if(!force&&Math.hypot(ps.x-t.x,ps.z-t.z)<R*1.25)continue;
+    for(let tries=0;tries<4;tries++){const[r,d]=cand[Math.floor(rnd()*cand.length)];if(!r.lanes){r.lanes=laneOf(r.h).one?oneLanes(r.h):twoLanes(r.h);r.prof=wayProf(r.h);}
+      const[o,dir]=r.lanes[Math.floor(rnd()*Math.min(4,r.lanes.length))];if(!r.big&&(c.m.userData.kind==='bus'||c.m.userData.kind==='truck'))continue;
+      if(cars.some(x=>x.p===r.p&&x.o===o&&x.dir===dir&&Math.abs(x.d-d)<18))continue;
+      Object.assign(c,{p:r.p,o,dir,d,main:false,prof:r.prof,v:R0(r.sp)*(c.m.userData.kind==='bus'||c.m.userData.kind==='truck'?.85:1),cv:undefined});placeCar(c);moved++;break;}}}
+function R0(sp){return sp[0]+rnd()*(sp[1]-sp[0]);}
+npcRecycle(true);
 
 /* 이름표: 종류별(지명·아파트·역·문화재/명소·건물·공원·학교/병원) 후보를 많이 모은 뒤, 매 프레임 화면에서 겹치지 않게 중요도 순으로 표시 */
 const LBCAT={place:'지명',apt:'아파트',station:'역',heritage:'문화재·명소',bldg:'건물',park:'공원·자연',edu:'학교·병원·공공'};
@@ -930,7 +946,7 @@ function drawMini(p,h){const S=mini.width,c=mctx,sc=S/2/260;c.setTransform(1,0,0
 
 const clock=new THREE.Clock();
 function frame(){const raw=Math.min(clock.getDelta(),.05),dt=raw*motion;
-  const sdt=dt*(ego.on?ego.mult:1);simT+=raw*(ego.on?ego.mult:1);{const dd=camera.position.distanceTo(controls.target),k=ego.on&&ego.view!=='free'?1:Math.max(1,Math.min(9,dd/260));if(Math.abs(k-VSC)>.05){VSC=k;for(const c of cars)c.m.scale.setScalar(k);if(ego.car)ego.car.scale.setScalar(ego.view==='free'?k:1);}}
+  if((npT+=raw)>.4){npT=0;try{npcRecycle(false);}catch(e){}}const sdt=dt*(ego.on?ego.mult:1);simT+=raw*(ego.on?ego.mult:1);{const dd=camera.position.distanceTo(controls.target),k=ego.on&&ego.view!=='free'?1:Math.max(1,Math.min(9,dd/260));if(Math.abs(k-VSC)>.05){VSC=k;for(const c of cars)c.m.scale.setScalar(k);if(ego.car)ego.car.scale.setScalar(ego.view==='free'?k:1);}}
   updateSignals();npcStep(sdt);railStep(simT);
   updateDrive(raw);if(!ego.on||ego.view==='free')controls.update();renderer.render(scene,camera);placeLabels();cmp.style.transform=`rotate(${controls.getAzimuthalAngle()}rad)`;
   requestAnimationFrame(frame);}
