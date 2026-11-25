@@ -946,7 +946,7 @@ function drawMini(p,h){const S=mini.width,c=mctx,sc=S/2/260;c.setTransform(1,0,0
 
 const clock=new THREE.Clock();
 function frame(){const raw=Math.min(clock.getDelta(),.05),dt=raw*motion;
-  if((npT+=raw)>.4){npT=0;try{npcRecycle(false);}catch(e){}}const sdt=dt*(ego.on?ego.mult:1);simT+=raw*(ego.on?ego.mult:1);{const dd=camera.position.distanceTo(controls.target),k=ego.on&&ego.view!=='free'?1:Math.max(1,Math.min(9,dd/260));if(Math.abs(k-VSC)>.05){VSC=k;for(const c of cars)c.m.scale.setScalar(k);if(ego.car)ego.car.scale.setScalar(ego.view==='free'?k:1);}}
+  if((npT+=raw)>.4){npT=0;try{npcRecycle(false);}catch(e){}}const sdt=dt*(ego.on?ego.mult:1);simT+=raw*(ego.on?ego.mult:1);{const dd=camera.position.distanceTo(controls.target),k=ego.on&&ego.view!=='free'?1:Math.max(1,Math.min(3,dd/500));if(Math.abs(k-VSC)>.05){VSC=k;/* 차는 차선 폭(약 3.2m)을 넘지 않게 최대 1.6배 */const kc=Math.min(1.6,k);for(const c of cars)c.m.scale.setScalar(kc);if(ego.car)ego.car.scale.setScalar(ego.view==='free'?kc:1);}}
   updateSignals();npcStep(sdt);railStep(simT);
   updateDrive(raw);if(!ego.on||ego.view==='free')controls.update();renderer.render(scene,camera);placeLabels();cmp.style.transform=`rotate(${controls.getAzimuthalAngle()}rad)`;
   requestAnimationFrame(frame);}
