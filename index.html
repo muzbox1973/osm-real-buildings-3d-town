@@ -24,6 +24,12 @@ html,body{margin:0;height:100%;overflow:hidden;font:15px/1.5 'Noto Sans KR',syst
 .lb.c{background:#ffe08a;color:#4a3800}
 .lb.u{background:#24324a;color:#fff}
 .vw{margin-top:6px;font-size:12px;color:#5b6675}.vw summary{cursor:pointer}.vw .addrRow{margin-top:6px}
+.lb.place{background:none;box-shadow:none;color:#2c333d;font-weight:800;font-size:13px;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 5px #fff}
+.lb.apt{font-size:11px;font-weight:600;color:#33404f;background:rgba(255,255,255,.88)}
+.lb.heritage{background:#6b3a26;color:#fff3df}.lb.park{background:rgba(232,245,228,.92);color:#2d5a2a}.lb.edu{font-size:11px;background:rgba(244,240,232,.92);color:#4a4033}.lb.bldg{font-size:11px}
+body.night .lb.place{color:#e8eef7;text-shadow:0 0 3px #000,0 0 4px #000}
+.lbcats{display:none;flex-wrap:wrap;gap:4px;margin-top:6px}.lbcats.on{display:flex}.lbcats label{font-size:12px;background:#eef1f5;border-radius:999px;padding:3px 9px;cursor:pointer;user-select:none}
+.lbcats input{margin:0 4px 0 0;vertical-align:-2px}
 .lb.st{background:#fff;border:2.5px solid #2f7bff;padding:1px 8px;font-size:11px}
 .card{position:fixed;left:16px;top:16px;z-index:3;width:min(380px,calc(100vw - 32px));background:var(--card);border-radius:16px;padding:16px 18px;box-shadow:0 8px 30px rgba(0,0,0,.18);backdrop-filter:blur(8px)}
 .card h1{margin:0;font-size:20px;line-height:1.2;font-weight:800;text-wrap:balance}
@@ -77,12 +83,13 @@ body.cockpit #cockpit{display:block}
   <p>OpenStreetMap 실측 데이터로 만든 3D 도시입니다. 데이터를 불러오는 중입니다.</p>
   <div class="row">
     <button id="bNight" aria-pressed="false">밤 풍경</button>
-    <button id="bLbl" aria-pressed="true">이름표</button>
+    <button id="bLbl" aria-pressed="true">이름표</button><button id="bLblCat" aria-pressed="false" title="이름표 종류">종류 ▾</button>
     <button id="bRot" aria-pressed="false">자동 회전</button>
     <button id="bDrive" style="background:#2f7bff;color:#fff">자율주행</button>
     <button id="bSub" style="display:none" aria-pressed="false">지하철 보기</button>
     <button id="bHome">처음 시점</button>
   </div>
+  <div id="lbCats" class="lbcats"></div>
   <form id="addrForm" class="addr" autocomplete="off">
     <label for="addrIn">주소로 다른 동네 만들기</label>
     <div class="addrRow"><input id="addrIn" placeholder="예: 롯데월드타워 / 서울시청 / 해운대" required>
@@ -381,7 +388,7 @@ const hRect=(F,hu,hv,du=0,dv=0)=>{const c=Math.cos(F.ang),s=Math.sin(F.ang),P=(u
 const hBox=(F,hu,hv,y0,h,side,top,du=0,dv=0)=>{if(hu>.05&&hv>.05&&h>.02)addExtrude(hRect(F,hu,hv,du,dv),h,side,top||side,y0);};
 /* 곡선 기와지붕: 처마 사각형(hu×hv, hu≥hv) → 용마루, 오목한 경사 + 네 귀 들림. t0~t1 구간만 그리면 중층의 아래 지붕(차양) */
 function hRoof(F,hu,hv,y0,rh,lift,t0=0,t1=1,mat=HMAT.roof,hip=.82){const c=Math.cos(F.ang),s=Math.sin(F.ang),W=(u,v,y)=>[F.cx+u*c-v*s,y,F.cz+u*s+v*c];
-  const rl=Math.max(0,hu-hv*hip),C=[[-hu,-hv],[hu,-hv],[hu,hv],[-hu,hv]],Rg=[[-rl,0],[rl,0]];
+  const rl=Math.max(hu*.42,hu-hv*hip),C=[[-hu,-hv],[hu,-hv],[hu,hv],[-hu,hv]],Rg=[[-rl,0],[rl,0]];
   const faces=[[C[0],C[1],Rg[0],Rg[1]],[C[2],C[3],Rg[1],Rg[0]],[C[1],C[2],Rg[1],Rg[1]],[C[3],C[0],Rg[0],Rg[0]]],out=[];
   const NU=hv>6?10:6,NT=hv>6?6:4;
   for(const[E0,E1,R0,R1]of faces){const P=(u,t)=>{t=t0+(t1-t0)*t;const ex=E0[0]+(E1[0]-E0[0])*u,ez=E0[1]+(E1[1]-E0[1])*u,rx=R0[0]+(R1[0]-R0[0])*u,rz=R0[1]+(R1[1]-R0[1])*u;
@@ -409,11 +416,11 @@ function hanok(b,info){let F=footFrame(b[3]);let hu=F.mu,hv=F.mv;if(hv>hu){F={..
   const ov=house?Math.max(.5,Math.min(1.1,Wd*.11)):Math.max(.8,Math.min(3,Wd*.17)),base=house?.45:Math.max(.6,Math.min(1.6,.5+Wd*.03));
   hBox(F,hu-ov*.4,hv-ov*.4,y,base,HMAT.stone,HMAT.stoneTop);y+=base;
   const bu=hu-ov,bv=hv-ov;if(bu<.8||bv<.8){addExtrude(b[3],3,HMAT.house,HMAT.roof,0);return;}
-  if(house){hBox(F,bu,bv,y,2.7,HMAT.house,HMAT.floor);hRoof(F,hu,hv,y+2.7,Wd*.3,.25,0,1,HMAT.roof,.78);return;}
+  if(house){hBox(F,bu,bv,y,2.7,HMAT.house,HMAT.floor);hRoof(F,hu,hv,y+2.7,Wd*.27,.25,0,1,HMAT.roof,.78);return;}
   const H=Math.max(3.4,Math.min(o.small?3:7.5,3+Wd*.11));hBox(F,bu,bv,y,H,HMAT.body,HMAT.floor);hBox(F,bu,bv,y+H,.75,HMAT.band,HMAT.floor);y+=H+.75;
   if(k==='hall2'){const y2=hRoof(F,hu,hv,y,hv*.72,Math.min(1.4,Wd*.05),0,.4);const iu=bu*.8,iv=bv*.72,H2=Math.max(2.6,H*.6);
-    hBox(F,iu,iv,y2-.4,H2,HMAT.body,HMAT.floor);hBox(F,iu,iv,y2-.4+H2,.7,HMAT.band,HMAT.floor);const ru=iu+ov*.9,rv=iv+ov*.9;hRoof(F,ru,rv,y2-.4+H2+.7,rv*.8,Math.min(1.5,Wd*.055));return;}
-  hRoof(F,hu,hv,y,hv*.74,Math.min(1.5,Wd*.055));}
+    hBox(F,iu,iv,y2-.4,H2,HMAT.body,HMAT.floor);hBox(F,iu,iv,y2-.4+H2,.7,HMAT.band,HMAT.floor);const ru=iu+ov*.9,rv=iv+ov*.9;hRoof(F,ru,rv,y2-.4+H2+.7,rv*.66,Math.min(1.5,Wd*.055));return;}
+  hRoof(F,hu,hv,y,hv*.62,Math.min(1.5,Wd*.055));}
 /* 근현대 랜드마크 */
 function modernMark(b){const f=b[3];for(const m of HM)if(pip(m.x,m.z,f)){if(m.kind==='gold'){b[7]='#d2a24a';if(!(b[4]>200))b[4]=249;}
   if(m.kind==='dome'){const top=b[4]||32;if(!(b[4]>0))b[4]=top;HDOME.push([m.x,m.z,top]);}}}
@@ -525,10 +532,10 @@ if(trains.length){for(const t of trains)nCars+=t.ch.K.n;
   carStripe=new THREE.InstancedMesh(str,new THREE.MeshLambertMaterial({color:0xffffff}),nCars);lmMats.push(carWin.material);
   let k=0;const c=new THREE.Color();for(const t of trains)for(let j=0;j<t.ch.K.n;j++){c.setHex(t.ch.col);carStripe.setColorAt(k++,c);}
   for(const m of[carIM,carWin,carStripe]){m.castShadow=SHADOW;m.frustumCulled=false;scene.add(m);}}
-const tO=new THREE.Object3D();
+const tO=new THREE.Object3D();let VSC=1;/* 멀리서 볼 때 차량·열차를 키워 보이게 하는 배율 */
 function railStep(T){if(!carIM)return;let k=0;for(const t of trains){const ch=t.ch,K=ch.K,Lt=K.n*(K.cl+.9),span=Math.max(1,ch.L-Lt),u=((T*t.v+t.ph)%(2*span)+2*span)%(2*span),p=u<span?u:2*span-u;
     for(let j=0;j<K.n;j++){const s=p+j*(K.cl+.9)+K.cl/2,a=chainAt(ch,s-K.cl/2),b=chainAt(ch,s+K.cl/2);
-      tO.position.set((a[0]+b[0])/2,(a[2]+b[2])/2+.3,(a[1]+b[1])/2);tO.rotation.set(0,-Math.atan2(b[1]-a[1],b[0]-a[0]),Math.atan2(b[2]-a[2],K.cl));tO.scale.set(K.cl,1,1);tO.updateMatrix();
+      tO.position.set((a[0]+b[0])/2,(a[2]+b[2])/2+.3,(a[1]+b[1])/2);tO.rotation.set(0,-Math.atan2(b[1]-a[1],b[0]-a[0]),Math.atan2(b[2]-a[2],K.cl));tO.scale.set(K.cl,VSC,VSC);tO.updateMatrix();
       carIM.setMatrixAt(k,tO.matrix);carWin.setMatrixAt(k,tO.matrix);carStripe.setMatrixAt(k,tO.matrix);k++;}}
   carIM.instanceMatrix.needsUpdate=carWin.instanceMatrix.needsUpdate=carStripe.instanceMatrix.needsUpdate=true;}
 railStep(0);
@@ -541,7 +548,7 @@ if(ST.length&&RWD.length){const plats=[],roofs=[],ug=[];const g=Grid(150);for(co
     if(!best)continue;const[w,j]=best,j1=Math.min(w.S.length-1,j+1),j0=Math.max(0,j-1),h=Math.atan2(w.f[2*j1+1]-w.f[2*j0+1],w.f[2*j1]-w.f[2*j0]),y=w.Y[j],px=w.f[2*j],pz=w.f[2*j+1];
     if(w.flag===1||y<-2)ug.push([px,y+1.2,pz,-h,1,1,1]);else{plats.push([px-Math.sin(h)*3.4,y+.6,pz+Math.cos(h)*3.4,-h,1,1,1],[px+Math.sin(h)*3.4,y+.6,pz-Math.cos(h)*3.4,-h,1,1,1]);roofs.push([px,y+5.2,pz,-h,1,1,1]);}
     const nm=name||'역';if(seenN.some(s=>s[0]===nm&&Math.hypot(s[1]-x,s[2]-z)<500))continue;seenN.push([nm,x,z]);
-    if(STL.length<(RAD<=5000?40:30))STL.push([nm.endsWith('역')?nm:nm+'역',x,z,Math.max(14,y+12),'st','#'+w.col.toString(16).padStart(6,'0')]);}
+    if(STL.length<160)STL.push([nm.endsWith('역')?nm:nm+'역',x,z,Math.max(14,y+12),'st','#'+w.col.toString(16).padStart(6,'0')]);}
   instBoxes(plats,120,1.1,3,Mc(0xc8c3b8),SHADOW);instBoxes(roofs,100,.35,10,Mc(0x8fa3b3),SHADOW);
   const ugM=new THREE.MeshLambertMaterial({color:0xf0e6c8,emissive:0xffe9b0,emissiveIntensity:.35});instBoxes(ug,150,4,12,ugM,false);}
 /* 지하철 보기: 지면·도로·건물을 반투명하게 해 지하 선로와 열차를 보이게 */
@@ -627,8 +634,8 @@ const oneLanes=(h,n)=>{const L=laneOf(h),k=n||L.f;return Array.from({length:k},(
 const twoLanes=h=>{const L=laneOf(h),o=[];for(let i=0;i<L.f;i++)o.push([(i+.5)*L.lw,1]);for(let i=0;i<L.b;i++)o.push([(i+.5)*L.lw,-1]);return o;};
 const hBy=(fn)=>H.find(fn);
 H.map(h=>{if(!['motorway','trunk','primary','secondary','tertiary'].includes(h[0])||h[1])return null;const f=h[4];let L=0;for(let i=2;i<f.length;i+=2)L+=Math.hypot(f[i]-f[i-2],f[i+1]-f[i-1]);
-   return Math.hypot(f[0],f[1])<1800&&L>220?[f,laneOf(h).one?oneLanes(h):twoLanes(h),L>600?2:1,[h[0]==='tertiary'?9:13,h[0]==='tertiary'?13:20],false,h[0]!=='tertiary',L,wayProf(h)]:null;}).filter(Boolean).sort((a,b)=>b[6]-a[6]).slice(0,12)
- .forEach(([f,lanes,n,sp,main,big,,prof])=>{const p=mkPath(f);for(const[o,dir]of lanes.slice(0,6))for(let k=0;k<n;k++){
+   return Math.hypot(f[0],f[1])<Math.min(RAD*.9,4500)&&L>220?[f,laneOf(h).one?oneLanes(h):twoLanes(h),Math.max(1,Math.min(4,Math.round(L/400))),[h[0]==='tertiary'?9:13,h[0]==='tertiary'?13:20],false,h[0]!=='tertiary',L,wayProf(h)]:null;}).filter(Boolean).sort((a,b)=>b[6]-a[6]).slice(0,RAD<=2500?40:70)
+ .forEach(([f,lanes,n,sp,main,big,,prof])=>{const p=mkPath(f);for(const[o,dir]of lanes.slice(0,4))for(let k=0;k<n;k++){if(cars.length>=(RAD<=2500?220:300))return;
    const q=rnd(),kind=(main||big)&&q<.06?'bus':(main||big)&&q<.12?'truck':q<.32?'suv':'sedan';
    const m=makeVehicle(kind,kind==='bus'?pick(busCols):pick(carCols));
    cars.push({m,p,o,dir,main,prof,d:p.tot*(k+rnd()*.6)/n,v:R(sp[0],sp[1])*(kind==='bus'||kind==='truck'?.85:1)});}});
@@ -636,22 +643,34 @@ function placeCar(c){const[x,z,u0,v0]=at(c.p,c.d),ux=u0*c.dir,uz=v0*c.dir,px=x-u
   c.m.position.set(px,.12+(c.main?under(px)+bridgeY(px):0)+(c.prof?c.prof(((c.d%c.p.tot)+c.p.tot)%c.p.tot):0),pz);c.m.rotation.y=-Math.atan2(uz,ux);}
 cars.forEach(placeCar);
 
-/* 이름표 */
+/* 이름표: 종류별(지명·아파트·역·문화재/명소·건물·공원·학교/병원) 후보를 많이 모은 뒤, 매 프레임 화면에서 겹치지 않게 중요도 순으로 표시 */
+const LBCAT={place:'지명',apt:'아파트',station:'역',heritage:'문화재·명소',bldg:'건물',park:'공원·자연',edu:'학교·병원·공공'};
 const LB=[];
-{const seen=new Set(),cands=[];
-  for(const[k,n,f]of A){if(!n||!['residential','school','park','hospital','commercial'].includes(k))continue;const b=bbox(f);cands.push([n,(b[0]+b[1])/2,(b[2]+b[3])/2,k==='residential'?60:28,k==='park'?'g':'',areaOf(f)]);}
-  for(const[n,x,z,w]of(D.PL||[]))cands.push([n,x,z,30,'',w]);
-  for(const[t,lv,n,f]of B){if(!n||/^\d+$/.test(n)||(!lv&&!['s','h','g'].includes(t)))continue;const b=bbox(f);cands.push([n,(b[0]+b[1])/2,(b[2]+b[3])/2,30,'',areaOf(f)]);}
-  const gap=Math.max(140,RAD/12);cands.sort((a,b)=>b[5]/(1+Math.hypot(b[1],b[2])/600)-a[5]/(1+Math.hypot(a[1],a[2])/600));
-  for(const c of cands){if(LB.length>=24||seen.has(c[0])||Math.hypot(c[1],c[2])>RAD)continue;if(LB.some(l=>Math.hypot(l[1]-c[1],l[2]-c[2])<gap))continue;seen.add(c[0]);LB.push(c.slice(0,5));}
-  LB.unshift([D.place||'검색 위치',0,0,40,'u']);LB.push(...STL);}
+{const seen=new Map(),cands=[],APTN=/아파트|단지|자이|래미안|푸르지오|힐스테이트|e\s*편한|아이파크|캐슬|더샵|센트레빌|리센츠|엘스|파크리오|트리지움|팰리스|헬리오시티|주공|위브|sk\s*뷰|꿈에그린|하이츠|맨션|써밋|아크로|렉슬/i;
+  const add=(n,x,z,h,cat,w,col)=>{if(!n||/^\d+(-\d+)?$/.test(n)||Math.hypot(x,z)>RAD*1.02||n===D.place)return;n=n.trim();const k=n+'|'+cat,o=seen.get(k);if(o&&Math.hypot(o[1]-x,o[2]-z)<400){if(w>o[5]){o[1]=x;o[2]=z;o[5]=w;}return;}const c=[n,x,z,h,cat,w,col];seen.set(k,c);cands.push(c);};
+  for(const[k,n,f]of A){if(!n)continue;const b=bbox(f),x=(b[0]+b[1])/2,z=(b[2]+b[3])/2,ar=areaOf(f);
+    if(k==='residential')add(n,x,z,55,APTN.test(n)||ar>15000?'apt':'place',ar);else if(/^(park|wood|forest|water|grass|pitch|stadium)$/.test(k))add(n,x,z,22,'park',ar*.8);
+    else if(/^(school|hospital)$/.test(k))add(n,x,z,26,'edu',ar*.7);else if(k==='commercial')add(n,x,z,30,'bldg',ar*.5);}
+  for(const[n,x,z,w,cat]of(D.PL||[]))add(n,x,z,cat==='place'?36:28,cat||'bldg',w);
+  for(const b of B){const[t,lv,n,f]=b;if(!n||b[8]===1)continue;const bb=bbox(f),x=(bb[0]+bb[1])/2,z=(bb[2]+bb[3])/2,ar=areaOf(f),h=(b[4]||(lv||3)*3.2)+6;
+    if(HER.has(b))add(n,x,z,h+6,'heritage',ar*30+2e5);else if(/^[sh]$/.test(t))add(n,x,z,h,'edu',ar*3);else if(t==='a'||APTN.test(n)){}else add(n,x,z,h,'bldg',ar*(1+(b[4]||lv*3||6)/10));}
+  for(const s2 of HS)add(s2.n,(s2.x0+s2.x1)/2,(s2.z0+s2.z1)/2,40,'heritage',9e5);for(const s2 of HP)add(s2.n.replace(/\(.*\)/,''),s2.x,s2.z,30,'heritage',6e5);
+  for(const m of HM)add(m.n,m.x,m.z,m.kind==='ntower'?250:60,'heritage',8e5);for(const[lm,b]of LMK){const F=footFrame(b[3]);add('롯데월드타워',F.cx,F.cz,570,'heritage',2e6);}
+  for(const l of STL)add(l[0],l[1],l[2],l[3],'station',7e5,l[5]);
+  cands.sort((a,b)=>b[5]-a[5]);LB.push([D.place||'검색 위치',0,0,40,'u',1e9]);for(const c of cands.slice(0,RAD<=2500?700:RAD<=5000?900:600))LB.push(c);}
 const lbBox=document.getElementById('labels'),pv=new THREE.Vector3();
-const labels=LB.map(([t,x,z,h,c,col])=>{const el=document.createElement('div');el.className='lb'+(c?' '+c:'');el.textContent=t;if(col)el.style.borderColor=col;lbBox.appendChild(el);return{el,v:new THREE.Vector3(x,h,z)}});
-let showLabels=true,night=false;
-function placeLabels(){const w=wrap.clientWidth,h=wrap.clientHeight;for(const l of labels){pv.copy(l.v).project(camera);
-  const vis=showLabels&&!(ego.on&&ego.view==='cockpit')&&pv.z<1&&Math.abs(pv.x)<1.05&&Math.abs(pv.y)<1.05;l.el.style.display=vis?'':'none';
-  if(vis)l.el.style.transform=`translate(${(pv.x+1)/2*w}px,${(1-pv.y)/2*h}px) translate(-50%,-100%)`;}}
-
+const labels=LB.map(([t,x,z,h,c,w,col])=>{const el=document.createElement('div');el.className='lb'+(c?' '+c:'')+(c==='station'?' st':'');el.textContent=t;if(col)el.style.borderColor=col;el.style.display='none';lbBox.appendChild(el);
+  return{el,v:new THREE.Vector3(x,h,z),cat:c,w,tw:t.length*(c==='place'?13:12)+20,on:false}});
+let showLabels=true,night=false;const lbOn={};{let saved={};try{saved=JSON.parse(localStorage.getItem('town3d.lbcat')||'{}');}catch(e){}for(const k in LBCAT)lbOn[k]=saved[k]!==false;}
+const LBMAX=110;
+function placeLabels(){const w=wrap.clientWidth,h=wrap.clientHeight,occ=[],cam=camera.position;let n=0;const hide=!showLabels||(ego.on&&ego.view==='cockpit');
+  const cand=[];if(!hide)for(const l of labels){if(l.cat&&l.cat!=='u'&&lbOn[l.cat]===false){if(l.on){l.el.style.display='none';l.on=false;}continue;}pv.copy(l.v).project(camera);
+    if(pv.z>=1||Math.abs(pv.x)>1.02||Math.abs(pv.y)>1.02){if(l.on){l.el.style.display='none';l.on=false;}continue;}
+    const d=cam.distanceTo(l.v);cand.push([l,(pv.x+1)/2*w,(1-pv.y)/2*h,l.w/(1+d*d/9e5)]);}
+  cand.sort((a,b)=>b[3]-a[3]);const shown=new Set();
+  for(const[l,x,y]of cand){if(n>=LBMAX)break;const r=[x-l.tw/2-2,y-24,x+l.tw/2+2,y+2];if(occ.some(o=>r[0]<o[2]&&r[2]>o[0]&&r[1]<o[3]&&r[3]>o[1]))continue;occ.push(r);n++;shown.add(l);
+    if(!l.on){l.el.style.display='';l.on=true;}l.el.style.transform=`translate(${x}px,${y}px) translate(-50%,-100%)`;}
+  for(const l of labels)if(l.on&&!shown.has(l)){l.el.style.display='none';l.on=false;}}
 /* 조작 */
 function view(p,t){camera.position.set(...p);controls.target.set(...t);controls.update();}
 function home(){const k=wrap.clientWidth/wrap.clientHeight<1?1.7:1,d=RAD*k;view([-.25*d,1.35*d,1.5*d],[0,0,0]);}
@@ -659,8 +678,11 @@ function setNight(n){night=n;const bg=n?0x0c1322:0xcfdfea;scene.background.set(b
   hemi.intensity=n?.28:.6;hemi.color.set(n?0x6d7fa8:0xe3ecf6);sun.intensity=n?.2:.72;sun.color.set(n?0x9fb4ff:0xfff1dc);
   Object.values(winMats).forEach(m=>m.emissiveIntensity=n?1.15:0);lmMats.forEach(m=>m.emissiveIntensity=n?(m.map?.75:1):0);headM.emissiveIntensity=tailM.emissiveIntensity=n?1.4:0;}
 const $=id=>document.getElementById(id);
-$('bNight').onclick=e=>{setNight(!night);e.currentTarget.setAttribute('aria-pressed',night);e.currentTarget.textContent=night?'낮 풍경':'밤 풍경';};
+$('bNight').onclick=e=>{setNight(!night);document.body.classList.toggle('night',night);e.currentTarget.setAttribute('aria-pressed',night);e.currentTarget.textContent=night?'낮 풍경':'밤 풍경';};
 $('bLbl').onclick=e=>{showLabels=!showLabels;e.currentTarget.setAttribute('aria-pressed',showLabels);};
+{const box=$('lbCats');for(const k in LBCAT){const lab=document.createElement('label'),cb=document.createElement('input');cb.type='checkbox';cb.checked=lbOn[k];
+    cb.onchange=()=>{lbOn[k]=cb.checked;try{localStorage.setItem('town3d.lbcat',JSON.stringify(lbOn));}catch(e){}};lab.append(cb,LBCAT[k]);box.appendChild(lab);}
+  $('bLblCat').onclick=e=>{const on=!box.classList.contains('on');box.classList.toggle('on',on);e.currentTarget.setAttribute('aria-pressed',on);};}
 $('bRot').onclick=e=>{controls.autoRotate=!controls.autoRotate;e.currentTarget.setAttribute('aria-pressed',controls.autoRotate);};
 if(RWD.some(w=>w.flag===1))$('bSub').style.display='';
 $('bSub').onclick=e=>{setXray(!xray);e.currentTarget.setAttribute('aria-pressed',xray);e.currentTarget.textContent=xray?'지상 보기':'지하철 보기';};
@@ -908,7 +930,8 @@ function drawMini(p,h){const S=mini.width,c=mctx,sc=S/2/260;c.setTransform(1,0,0
 
 const clock=new THREE.Clock();
 function frame(){const raw=Math.min(clock.getDelta(),.05),dt=raw*motion;
-  const sdt=dt*(ego.on?ego.mult:1);simT+=raw*(ego.on?ego.mult:1);updateSignals();npcStep(sdt);railStep(simT);
+  const sdt=dt*(ego.on?ego.mult:1);simT+=raw*(ego.on?ego.mult:1);{const dd=camera.position.distanceTo(controls.target),k=ego.on&&ego.view!=='free'?1:Math.max(1,Math.min(9,dd/260));if(Math.abs(k-VSC)>.05){VSC=k;for(const c of cars)c.m.scale.setScalar(k);if(ego.car)ego.car.scale.setScalar(ego.view==='free'?k:1);}}
+  updateSignals();npcStep(sdt);railStep(simT);
   updateDrive(raw);if(!ego.on||ego.view==='free')controls.update();renderer.render(scene,camera);placeLabels();cmp.style.transform=`rotate(${controls.getAzimuthalAngle()}rad)`;
   requestAnimationFrame(frame);}
 if(OSM){document.querySelector('.card h1').textContent='우리 동네 3D · '+(D.place||'검색 위치');
@@ -955,7 +978,8 @@ function oQuery(bb,lv){const S=[`way["highway"~"^(${lv<=1?HW_ALL:lv===2?HW_MID:H
   S.push('way["leisure"~"^(park|pitch|golf_course|stadium|garden|track|playground)$"]','way["landuse"~"^(forest|grass|meadow|farmland|residential|commercial|industrial|construction|cemetery|recreation_ground|retail)$"]',
     'way["natural"~"^(wood|water|scrub|grassland)$"]','relation["natural"~"^(water|wood)$"]','relation["landuse"~"^(forest|residential)$"]','way["waterway"="riverbank"]',
     'way["amenity"~"^(school|university|hospital|parking|college|kindergarten)$"]');
-  if(lv<=1)S.push('node["highway"="traffic_signals"]');
+  if(lv<=1)S.push('node["highway"="traffic_signals"]','node["place"~"^(suburb|quarter|neighbourhood|village|hamlet)$"]','node["tourism"~"^(attraction|museum|viewpoint|zoo|theme_park|gallery|aquarium)$"]["name"]','node["historic"]["name"]','node["amenity"~"^(townhall|university|college|hospital|library|police|fire_station)$"]["name"]');
+  else S.push('node["place"~"^(suburb|town|city)$"]');
   return `[out:json][timeout:120];(${S.map(x=>x+'('+bb+');').join('')});out geom qt;`;}
 function dpL(pts,t){if(pts.length<3)return pts;let dm=0,ix=0;const a=pts[0],b=pts[pts.length-1];for(let i=1;i<pts.length-1;i++){const p=pts[i],vx=b[0]-a[0],vy=b[1]-a[1],L=Math.hypot(vx,vy)||1,d=Math.abs(vx*(a[1]-p[1])-vy*(a[0]-p[0]))/L;if(d>dm){dm=d;ix=i;}}
   return dm>t?dpL(pts.slice(0,ix+1),t).slice(0,-1).concat(dpL(pts.slice(ix),t)):[a,b];}
@@ -970,14 +994,16 @@ function areaKind(t){if(t.leisure==='park'||t.leisure==='garden'||t.landuse==='r
   if(t.landuse==='industrial')return'industrial';if(/^(school|university|college|kindergarten)$/.test(t.amenity||''))return'school';if(t.amenity==='parking')return'parking';if(t.amenity==='hospital')return'hospital';return null;}
 /* Overpass(OSM 원본) 경로: 차로 수·신호등·3D 부품·노선색까지 가장 자세함. ui=false면 화면 표시 없이 뒤에서 받음 */
 async function loadOverpassData(ctx,ui,sig){const{lat0,lon0,KX,KZ,R,dLat,dLon,lv,tol}=ctx,n=R<=2000?1:R<=10000?2:R<=15000?3:4,UI=ui?loadUI:{t(){},p(){}},OQ={sig,quiet:!ui};
-  const B=[],H=[],A=[],S=[],RLW=[],ST=[],TW=[],FW=[],seen=new Set(),P=gm=>gm.map(p=>[(p.lon-lon0)*KX,(lat0-p.lat)*KZ]),r1=a=>Math.round(a*10)/10;
+  const B=[],H=[],A=[],S=[],RLW=[],ST=[],TW=[],FW=[],PL=[],seen=new Set(),P=gm=>gm.map(p=>[(p.lon-lon0)*KX,(lat0-p.lat)*KZ]),r1=a=>Math.round(a*10)/10;
   const bFlag=t=>t.historic==='city_gate'||(t.building==='gate'&&t.historic)?'g':(/^(temple|shrine|palace|pagoda)$/.test(t.building||'')||/traditional|hanok|korean/i.test(t['building:architecture']||'')||
       (t.historic&&/^(building|palace|castle|temple|yes|manor)$/.test(t.historic)&&/(전|당|각|루|정|헌|재|궁|사|문|청|묘|단|채|원)$/.test(t.name||'')))?'k':(t.building==='stadium'||t.leisure==='stadium')?'S':'';
   const inside=pts=>pts.some(([x,z])=>x*x+z*z<R*R*1.02);
   function convert(el){const t=el.tags||{};
     if(el.type==='node'){const x=(el.lon-lon0)*KX,z=(lat0-el.lat)*KZ;if(t.highway==='traffic_signals')S.push([x,z]);
       else if(t.railway==='station'&&x*x+z*z<R*R)ST.push([(t.name||'').replace(/\s*\(.*\)$/,''),r1(x),r1(z),t.station||(t.subway==='yes'?'subway':'train')]);
-      else if(t.man_made&&parseFloat(t.height)>=80)TW.push([r1(x),r1(z),parseFloat(t.height),t.name||'']);return;}
+      else if(t.man_made&&parseFloat(t.height)>=80)TW.push([r1(x),r1(z),parseFloat(t.height),t.name||'']);
+      else if(t.name&&x*x+z*z<R*R){if(t.place)PL.push([t.name,r1(x),r1(z),/^(city|town)$/.test(t.place)?3e6:t.place==='suburb'?1.2e6:5e5,'place']);
+        else if(t.tourism||t.historic)PL.push([t.name,r1(x),r1(z),3e5,'heritage']);else if(t.amenity)PL.push([t.name,r1(x),r1(z),/hospital|university|townhall/.test(t.amenity)?1.5e5:6e4,'edu']);}return;}
     let gm=el.geometry;if(!gm&&el.members){const o=el.members.find(m=>m.role==='outer'&&m.geometry);gm=o&&o.geometry;}if(!gm||gm.length<2)return;
     let pts=P(gm);if(!inside(pts))return;
     if(t.railway){if(!/^(rail|subway|light_rail|monorail|narrow_gauge|tram)$/.test(t.railway)||/^(yard|siding|spur|crossover)$/.test(t.service||''))return;
@@ -1007,7 +1033,7 @@ async function loadOverpassData(ctx,ui,sig){const{lat0,lon0,KX,KZ,R,dLat,dLon,lv
       for(const w of RLW)w[2]=cm.get(w[5])||0;}catch(e){}}
   for(const w of RLW){if(!w[2])w[2]=lineColor({name:w[3]})||0;w.length=5;}
   UI.t(`3D 장면을 만드는 중 · 건물 ${B.length.toLocaleString()}개, 도로 ${H.length.toLocaleString()}개, 철도 ${RLW.length.toLocaleString()}구간`);UI.p(.88);await sleep(60);
-  return{B,H,A,S,RLW,ST,TW,FW,src:'overpass'};}
+  return{B,H,A,S,RLW,ST,TW,FW,PL,src:'overpass'};}
 /* 최소 MVT(Mapbox Vector Tile) 디코더: protobuf → {layer:[{type,props,geom:[[[x,y],...],...],ext}]} */
 function mvtDecode(buf){const b=new Uint8Array(buf);let p=0;
   const varint=()=>{let r=0,s=0,c;do{c=b[p++];r+=(c&127)*2**s;s+=7;}while(c>=128);return r;};
@@ -1046,7 +1072,8 @@ const TROAD={motorway:'motorway',trunk:'trunk',primary:'primary',secondary:'seco
 const TAREA={wood:'wood',forest:'wood',grass:'grass',meadow:'grass',scrub:'grass',farmland:'farmland',residential:'residential',commercial:'commercial',retail:'commercial',industrial:'industrial',
   school:'school',university:'school',college:'school',kindergarten:'school',hospital:'hospital',cemetery:'grass',stadium:'stadium',pitch:'pitch',track:'track',playground:'playground',park:'park',garden:'park',
   recreation_ground:'park',construction:'construction',golf_course:'pitch',parking:'parking'};
-const TLABEL=/^(school|college|hospital|park|attraction|stadium|town_hall|museum|library|university|shop|castle|monument|zoo|theatre|place_of_worship)$/;
+const TLABEL=/^(school|college|hospital|park|attraction|stadium|town_hall|museum|library|university|shop|castle|monument|zoo|theatre|place_of_worship|art_gallery|cinema|police|fire_station|post|aquarium|theme_park|viewpoint)$/;
+const tCat=c=>/^(attraction|museum|castle|monument|art_gallery|aquarium|theme_park|viewpoint)$/.test(c)?'heritage':/^(school|college|university|hospital|town_hall|library|police|fire_station|post)$/.test(c)?'edu':/^(park|zoo)$/.test(c)?'park':'bldg';
 async function loadTilesData(ctx,ui,sig){const{lat0,lon0,KX,KZ,R,lv,tol}=ctx,UI=ui?loadUI:{t(){},p(){}};
   UI.t('지도 타일 정보 받는 중');const tj=await(await fetchT(TILE_JSON,15000,sig)).json(),url=tj.tiles[0];
   const z=R<=5000?14:13,N=2**z,tx=lon=>Math.floor((lon+180)/360*N),ty=lat=>Math.floor((1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(lat*Math.PI/180))/Math.PI)/2*N);
@@ -1075,8 +1102,8 @@ async function loadTilesData(ctx,ui,sig){const{lat0,lon0,KX,KZ,R,lv,tol}=ctx,UI=
           const fl=pts.flat().map(r1);if(areaF(fl)<(lv>=2?3000:300))continue;A.push([k,f.props.name||'',fl]);}}}
     for(const f of L.poi||[]){const P=f.props;if(!P.name||!f.geom[0]||!inT(f.geom[0][0],f.ext))continue;const[x,zz]=loc(f.geom[0][0],f.ext);if(x*x+zz*zz>R*R)continue;
       if(P.class==='railway'&&/^(subway|station|halt|train_station|light_rail|monorail|tram_stop)$/.test(P.subclass||'')){if(P.subclass!=='tram_stop')ST.push([P.name.replace(/\s*\(.*\)$/,''),r1(x),r1(zz),P.subclass==='subway'?'subway':'train']);continue;}
-      if(TLABEL.test(P.class||'')&&(P.rank||9)<=3&&!/(의원|치과|약국|쉼터|센터점|지점|\d+호점)$/.test(P.name)&&!(P.class==='shop'&&!/(백화점|몰|마트|시장)/.test(P.name)))PL.push([P.name,r1(x),r1(zz),(5-(P.rank||3))*9000]);}
-    for(const f of L.place||[]){const P=f.props;if(!P.name||!f.geom[0]||!inT(f.geom[0][0],f.ext)||!/^(suburb|neighbourhood|quarter)$/.test(P.class))continue;const[x,zz]=loc(f.geom[0][0],f.ext);if(x*x+zz*zz<R*R)PL.push([P.name,r1(x),r1(zz),P.class==='suburb'?60000:30000]);}};
+      if(TLABEL.test(P.class||'')&&(P.rank||9)<=4&&!/(의원|치과|약국|쉼터|센터점|지점|\d+호점)$/.test(P.name)&&!(P.class==='shop'&&!/(백화점|몰|마트|시장)/.test(P.name)))PL.push([P.name,r1(x),r1(zz),(6-(P.rank||4))*9000,tCat(P.class)]);}
+    for(const f of L.place||[]){const P=f.props;if(!P.name||!f.geom[0]||!inT(f.geom[0][0],f.ext)||!/^(suburb|neighbourhood|quarter|village|hamlet|town|city)$/.test(P.class))continue;const[x,zz]=loc(f.geom[0][0],f.ext);if(x*x+zz*zz<R*R)PL.push([P.name,r1(x),r1(zz),/^(city|town)$/.test(P.class)?3e6:P.class==='suburb'?1.2e6:5e5,'place']);}};
   let next=0,fail=0;const worker=async()=>{while(next<jobs.length){const[x,y]=jobs[next++];let ok=false;
       for(let k=0;k<3&&!ok;k++){try{const r=await fetchT(url.replace('{z}',z).replace('{x}',x).replace('{y}',y),20000,sig);conv(mvtDecode(await r.arrayBuffer()),x,y);ok=true;}catch(e){if(sig&&sig.aborted)throw e;await sleep(800*(k+1));}}
       if(!ok)fail++;done++;UI.t(`지도 타일 받는 중 (${done}/${jobs.length}) · 건물 ${B.length.toLocaleString()}개`);UI.p(.05+.75*done/jobs.length);}};
