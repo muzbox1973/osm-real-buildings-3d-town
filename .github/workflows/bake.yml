@@ -27,9 +27,6 @@ jobs:
       - name: Install Playwright
         run: npm i --no-save playwright@1.48.2 && npx playwright install --with-deps chromium
       - name: Bake
-        env:
-          VWORLD_KEY: ${{ secrets.VWORLD_KEY }}
-          VWORLD_DOMAIN: ${{ secrets.VWORLD_DOMAIN }}
         run: node tools/bake.mjs
       - name: Commit
         run: |

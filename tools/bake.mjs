@@ -28,8 +28,7 @@ const server = http.createServer((req, res) => {
 const browser = await chromium.launch();
 async function run(src, timeout) {
   const page = await browser.newPage();
-  // 건축물대장 층수(브이월드 GIS건물통합정보): 키가 있으면 앱의 enrichFloors 가 사용 — URL·로그에 키를 남기지 않음
-  if (process.env.VWORLD_KEY) await page.addInitScript(([key, domain]) => { window.__VW = { key, domain }; }, [process.env.VWORLD_KEY, process.env.VWORLD_DOMAIN || 'https://muzbox1973.github.io']);
+  // data.js 는 OSM 데이터만 담아 ODbL 로 공개한다. 브이월드(건축물대장) 데이터는 넣지 않는다 — 앱에서 각자 키로 화면에만 사용
   page.on('console', m => { if (m.type() === 'error') console.log('[page]', m.text()); });
   const url = `http://localhost:8765/index.html?addr=${encodeURIComponent(ADDR)}&r=${RKM}&dump=1&src=${src}`;
   console.log('open', url);

@@ -98,9 +98,11 @@
 ### 5) 건축물대장 층수 쓰기 (브이월드 키)
 OSM에는 층수가 빠진 건물이 많습니다. 브이월드 **GIS건물통합정보(LT_C_BLDGINFO)** 는 건물 도형마다 건축물대장의 **지상층수·높이**를 담고 있어, 키가 있으면 이 값을 건물마다 맞춰 씁니다. OSM 건물의 중심이 대장 건물 도형 안에 있거나, 대장 건물의 중심이 OSM 건물 안에 있으면 같은 건물로 봅니다. 한 건물에 여러 대장 건물이 겹치면 가장 높은 층수를 씁니다.
 
-1. [브이월드](https://www.vworld.kr)에 가입하고 **오픈API → 인증키 발급**에서 키를 받습니다. 서비스 URL은 `https://muzbox1973.github.io`(또는 직접 올린 주소)로 등록합니다.
-2. **기본 화면(롯데월드타워 5 km)에 반영**: 저장소 **Settings → Secrets and variables → Actions**에 `VWORLD_KEY`(인증키)와 `VWORLD_DOMAIN`(등록한 서비스 URL)을 추가한 뒤, **Actions → Bake default map data → Run workflow**를 누릅니다. 다음부터 매달 자동으로 다시 만들 때도 층수가 들어갑니다.
-3. **주소 모드에 반영**: 화면 카드의 **건축물대장 층수 쓰기 (브이월드 키)** 를 열고 키를 넣어 **저장**합니다(이 브라우저에만 저장). 반경 5 km 이하에서 동작합니다.
+1. [브이월드](https://www.vworld.kr)에 가입하고 **오픈API → 인증키 발급**에서 키를 받습니다. 활용 API에 **2D 데이터 API**를 고르고, 서비스 URL은 `https://muzbox1973.github.io`(또는 직접 올린 주소)로 등록합니다.
+2. 화면 카드의 **건축물대장 층수 쓰기 (브이월드 키)** 를 열고 키를 넣어 **저장**합니다(이 브라우저에만 저장).
+3. 지도를 다시 열면 기본 화면과 주소 모드(반경 5 km 이하) 모두 건축물대장 층수를 받아 씁니다.
+
+브이월드 데이터는 **각자의 키로 받아 화면에만** 씁니다. 저장소의 `data.js`에는 넣지 않습니다(공개 데이터는 OSM만, ODbL — 아래 [라이선스](#라이선스) 참고).
 
 층수가 반영되면 카드 설명에 "층수는 건축물대장(…) N동을 반영했습니다"가 표시됩니다.
 
@@ -114,7 +116,7 @@ OSM에는 층수가 빠진 건물이 많습니다. 브이월드 **GIS건물통�
 | 노선색 | OSM 노선(route) 관계의 `colour` | 없으면 수도권 노선 이름으로 지정(1~9호선, 신분당선, 경의중앙선, 수인분당선, 공항철도 등) |
 | 롯데월드타워 형상 | 공개된 건축 개요(높이 554.5 m, 123층)를 바탕으로 한 근사 모델 | 위치·방향·밑면 크기는 OSM 외곽선 기준 |
 | 차로 수 | OSM `lanes`, `lanes:forward/backward` (Overpass) | 타일 데이터이거나 값이 없으면 도로 종류별 기본값 |
-| 층수·높이 | 국토교통부 GIS건물통합정보(브이월드 LT_C_BLDGINFO, 건축물대장 속성) | 브이월드 키가 있을 때만, 반경 5 km 이하 |
+| 층수·높이 | 국토교통부 GIS건물통합정보(브이월드 LT_C_BLDGINFO, 건축물대장 속성) | 사용자가 자기 브이월드 키를 넣었을 때만, 화면에만 표시(저장·배포 안 함), 반경 5 km 이하 |
 | 신호등 | OSM `highway=traffic_signals` (Overpass) | 타일 데이터일 때는 간선도로 교차로에 추정 배치 |
 | 기본 화면 데이터 | GitHub Actions가 매달·코드 변경 때 다시 만듦 (`tools/bake.mjs`) | Overpass 우선, 실패하면 타일 |
 | 주소 검색 | Nominatim (OpenStreetMap) | 이용 정책상 초당 1회 이하 요청 |
@@ -177,6 +179,17 @@ docs/screenshots/          README 스크린샷
 - 지도 데이터 © [OpenStreetMap](https://www.openstreetmap.org/copyright) 기여자, [ODbL 1.0](https://opendatacommons.org/licenses/odbl/)
 - 3D 엔진: [three.js](https://threejs.org/) (MIT)
 
+## 라이선스
+| 대상 | 라이선스 |
+|---|---|
+| 소스 코드 (`index.html`, `tools/`, `.github/` 등) | [MIT](LICENSE) © GPT PARK |
+| 지도 데이터 `data.js` (OSM에서 만든 파생 데이터베이스) | [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/) © OpenStreetMap 기여자 — MIT 적용 대상이 아닙니다 |
+| 스크린샷(`docs/`) | OSM 데이터로 만든 이미지 — 쓸 때 "© OpenStreetMap 기여자"를 표기해 주세요 |
+| 건축물대장 층수(브이월드) | 저장소에 포함하지 않음 — 각 사용자가 자기 키로 받아 화면에만 표시 |
+| three.js(MIT), Noto Sans KR(OFL) | 저장소에 포함하지 않고 CDN에서 불러옴 |
+
+이 앱은 롯데월드타워·롯데그룹과 관계없는 개인 프로젝트입니다. 건물 이름은 위치를 나타내기 위해서만 씁니다.
+
 ## 개발자
 **GPT PARK**
 - 유튜브: https://www.youtube.com/@AIFACT-GPTPARK
@@ -195,7 +208,7 @@ docs/screenshots/          README 스크린샷
 - The default view ships with the repo (`data.js`, rebuilt by GitHub Actions), so it also opens from a local file or inside a Claude artifact; only address mode needs the map servers.
 
 ### Features
-- **Real footprints** from OpenStreetMap; heights from `height`/`building:levels`, otherwise per-type defaults. Floor counts and heights can come from the Korean building register (V-World GIS building data, LT_C_BLDGINFO): set `VWORLD_KEY`/`VWORLD_DOMAIN` repository secrets for the baked default view, or save a key in the app's "건축물대장 층수 쓰기" panel for address mode (radius ≤ 5 km). Apartments without floor data get 15 floors; blocks inside apartment complexes, block-number names (e.g. "101동") and slab-shaped footprints count as apartments even when not tagged so.
+- **Real footprints** from OpenStreetMap; heights from `height`/`building:levels`, otherwise per-type defaults. Floor counts and heights can come from the Korean building register (V-World GIS building data, LT_C_BLDGINFO): save your own V-World key in the app's "건축물대장 층수 쓰기" panel and the data is fetched at runtime for the default view and address mode (radius ≤ 5 km), shown on screen only. Apartments without floor data get 15 floors; blocks inside apartment complexes, block-number names (e.g. "101동") and slab-shaped footprints count as apartments even when not tagged so.
 - **Landmarks**: Lotte World Tower is modeled to its real form — 554.5 m, a rounded-square section tapering in a continuous curve, a vertical seam on one face and a four-petal glass lantern on top, lit at night. Other buildings use OSM **Simple 3D Buildings** data when present (`building:part`, `min_height`, `roof:shape` dome/onion/pyramidal, `building:colour`). Towers of 80 m or more (e.g. N Seoul Tower) get a tower model.
 - **Railways & subways**: surface track (ballast, rails, sleepers), viaducts on piers and underground sections, with automatic ramps between them. Underground lines are traced on the ground in their line colours (from OSM route relations, or Seoul line names), **trains run along the real tracks**, and stations get platforms and colour-coded labels.
 - **Subway view (x-ray)**: makes the ground, roads and buildings translucent to reveal tunnels, underground platforms and moving trains.
@@ -223,6 +236,14 @@ python -m http.server 8000   # then open http://localhost:8000/
 ### Data & accuracy
 - Map data © OpenStreetMap contributors (ODbL), served via OpenFreeMap tiles or the Overpass API. Line colours from OSM route relations. Lotte World Tower form is an approximation based on its published specifications; position, orientation and base size come from the OSM footprint.
 - Estimated parts: missing heights, detailed shapes of other buildings without OSM 3D parts, signal timings and train headways (random, trains shuttle back and forth), tunnel depths (subway ~16 m, rail ~12 m).
+
+### License
+- Source code (`index.html`, `tools/`, `.github/`, …): [MIT](LICENSE) © GPT PARK.
+- Map data `data.js` is a derivative database of OpenStreetMap: © OpenStreetMap contributors, [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/). It is **not** covered by the MIT license.
+- Screenshots in `docs/` are produced works from OSM data; credit "© OpenStreetMap contributors" when reusing them.
+- Building floor counts from V-World are fetched at runtime with each user's own key and shown on screen only; they are not stored in or distributed with this repository.
+- three.js (MIT) and Noto Sans KR (OFL) are loaded from CDNs, not bundled.
+- Not affiliated with Lotte World Tower or Lotte Group; building names are used only to identify locations.
 
 ### Known limitations
 No train timetables or station stops, no pedestrian phases or lane changes; large radii take time to download and may be slow on low-end devices.
