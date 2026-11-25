@@ -8,6 +8,7 @@
 
 - 데모(웹 버전): https://muzbox1973.github.io/osm-real-buildings-3d-town/
 - 롯데월드타워 1 km(가까이서 자세히): https://muzbox1973.github.io/osm-real-buildings-3d-town/?addr=롯데월드타워&r=1
+- 개발: **GPT PARK** · [유튜브](https://www.youtube.com/@AIFACT-GPTPARK) · [공식 사이트](https://gptparkai.com/)
 
 ![롯데월드타워 반경 5 km](docs/screenshots/lotte-overview.jpg)
 
@@ -176,6 +177,11 @@ docs/screenshots/          README 스크린샷
 - 지도 데이터 © [OpenStreetMap](https://www.openstreetmap.org/copyright) 기여자, [ODbL 1.0](https://opendatacommons.org/licenses/odbl/)
 - 3D 엔진: [three.js](https://threejs.org/) (MIT)
 
+## 개발자
+**GPT PARK**
+- 유튜브: https://www.youtube.com/@AIFACT-GPTPARK
+- 공식 사이트: https://gptparkai.com/
+
 ---
 
 <a id="english"></a>
@@ -184,6 +190,7 @@ docs/screenshots/          README 스크린샷
 **OSM Real Buildings 3D Town** turns real map data into a 3D city you can drive through — with **autonomous driving, turn-by-turn navigation, traffic lights, landmarks and subways**. It is a single `index.html` (Three.js, no build step). Enter any address and pick a radius of **1 · 3 · 5 km**. The default view is **Lotte World Tower, Seoul, 5 km radius**.
 
 - Live demo: https://muzbox1973.github.io/osm-real-buildings-3d-town/
+- Developer: **GPT PARK** · [YouTube](https://www.youtube.com/@AIFACT-GPTPARK) · [Official site](https://gptparkai.com/)
 - Detailed 1 km view: `?addr=Lotte World Tower&r=1` · 3 km: `?addr=Lotte World Tower&r=3`
 - The default view ships with the repo (`data.js`, rebuilt by GitHub Actions), so it also opens from a local file or inside a Claude artifact; only address mode needs the map servers.
 
