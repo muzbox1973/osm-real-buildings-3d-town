@@ -23,6 +23,7 @@ html,body{margin:0;height:100%;overflow:hidden;font:15px/1.5 'Noto Sans KR',syst
 .lb.g{background:rgba(232,244,226,.93);color:#2d5a2a}
 .lb.c{background:#ffe08a;color:#4a3800}
 .lb.u{background:#24324a;color:#fff}
+.vw{margin-top:6px;font-size:12px;color:#5b6675}.vw summary{cursor:pointer}.vw .addrRow{margin-top:6px}
 .lb.st{background:#fff;border:2.5px solid #2f7bff;padding:1px 8px;font-size:11px}
 .card{position:fixed;left:16px;top:16px;z-index:3;width:min(380px,calc(100vw - 32px));background:var(--card);border-radius:16px;padding:16px 18px;box-shadow:0 8px 30px rgba(0,0,0,.18);backdrop-filter:blur(8px)}
 .card h1{margin:0;font-size:20px;line-height:1.2;font-weight:800;text-wrap:balance}
@@ -88,6 +89,9 @@ body.cockpit #cockpit{display:block}
     <select id="radIn" aria-label="반경"><option value="2">2 km</option><option value="5">5 km</option><option value="10">10 km</option><option value="15">15 km</option><option value="20">20 km</option></select>
     <button type="submit">만들기</button></div>
     <p id="addrMsg" class="addrMsg"></p>
+    <details id="vwBox" class="vw"><summary>건축물대장 층수 쓰기 (브이월드 키)</summary>
+      <div class="addrRow"><input id="vwKey" placeholder="브이월드 오픈API 인증키" autocomplete="off"><button type="button" id="vwSave">저장</button></div>
+      <p id="vwMsg" class="addrMsg">키가 있으면 주소 모드(반경 5 km 이하)에서 건물마다 건축물대장 지상층수·높이를 씁니다. 키 발급 때 서비스 URL을 이 페이지 주소로 등록하세요. 키는 이 브라우저에만 저장됩니다.</p></details>
   </form>
   <small id="credit">지도 데이터 © OpenStreetMap 기여자 (ODbL)</small>
 </div>
@@ -759,7 +763,7 @@ function frame(){const raw=Math.min(clock.getDelta(),.05),dt=raw*motion;
   updateDrive(raw);if(!ego.on||ego.view==='free')controls.update();renderer.render(scene,camera);placeLabels();cmp.style.transform=`rotate(${controls.getAzimuthalAngle()}rad)`;
   requestAnimationFrame(frame);}
 if(OSM){document.querySelector('.card h1').textContent='우리 동네 3D · '+(D.place||'검색 위치');
-  document.querySelector('.card p').textContent=`${D.baked?'미리 받아 둔 OpenStreetMap 데이터('+D.baked.at.slice(0,10)+')로':'OpenStreetMap 실시간 데이터로'} 반경 ${RAD/1000} km를 만들었습니다. 층수·차로 수는 OSM에 있는 값을 쓰고, 없으면 건물·도로 종류별 추정값입니다.`+(RAD>5000?' 반경이 커서 큰 건물과 주요 도로만 불러왔습니다.':'');
+  document.querySelector('.card p').textContent=`${D.baked?'미리 받아 둔 OpenStreetMap 데이터('+D.baked.at.slice(0,10)+')로':'OpenStreetMap 실시간 데이터로'} 반경 ${RAD/1000} km를 만들었습니다. 층수·차로 수는 OSM에 있는 값을 쓰고, 없으면 건물·도로 종류별 추정값입니다.`+(D.floors?` 층수는 건축물대장(브이월드 GIS건물통합정보, ${D.floors.at}) ${D.floors.n.toLocaleString()}동을 반영했습니다.`:'')+(RAD>5000?' 반경이 커서 큰 건물과 주요 도로만 불러왔습니다.':'');
   $('credit').innerHTML='지도 데이터 © OpenStreetMap 기여자 (ODbL)'+(D.baked?'':' · <a href="'+location.pathname+'" style="color:#2f7bff">롯데월드타워 기본 화면</a>');$('loadBar').style.width='100%';}
 document.getElementById('load').classList.remove('on');
 window.town3d={D,camera,controls,view,home,setXray,setNight,setView,startRouteAt,ego,HIDE,LMK,RWD,tick(n=1,dt=1/30){for(let i=0;i<n;i++){const m=ego.on?ego.mult:1;simT+=dt*m;updateSignals();npcStep(dt*m);railStep(simT);updateDrive(dt);}if(!ego.on||ego.view==='free')controls.update();renderer.render(scene,camera);placeLabels();},get simT(){return simT}};
@@ -943,14 +947,53 @@ async function loadOSM(addr,R,opt={}){loadUI.on();{const h=document.querySelecto
     let T=null,tErr=null;try{T=await loadTilesData(ctx,true);}catch(e){tErr=e;}
     if(T){if(!O&&!oErr){loadUI.t('OpenStreetMap 원본(차로 수·신호등) 확인 중');await Promise.race([pO,sleep(8000)]);}if(O)D=O;else{ab.abort();D=T;}}
     else{loadUI.t('타일 서버 응답 없음 · OpenStreetMap(Overpass) 데이터를 기다리는 중');await pO;if(!O)throw new Error('지도 데이터를 받지 못했습니다. ('+(tErr&&tErr.message)+' / '+(oErr&&oErr.message)+')');D=O;}}
+  try{await enrichFloors(D,ctx,true);}catch(e){console.warn(e);}
   loadUI.t(`3D 장면을 만드는 중 · 건물 ${D.B.length.toLocaleString()}개, 도로 ${D.H.length.toLocaleString()}개, 철도 ${D.RLW.length.toLocaleString()}구간`);loadUI.p(.88);await sleep(60);
   return Object.assign(D,{osm:1,r:R,place:g.name,full:g.full,lat0,lon0});}
+/* ===== 층수 보강: 브이월드 GIS건물통합정보(LT_C_BLDGINFO, 건축물대장 지상층수·높이) =====
+   키: window.__VW={key,domain} (GitHub Actions 굽기) 또는 화면의 '층수 데이터 키'(localStorage)
+   OSM 건물 중심점이 대장 건물 도형 안에 있거나, 대장 건물 중심점이 OSM 건물 안에 있으면 그 층수·높이를 쓴다 */
+const VW_API='https://api.vworld.kr/req/data';
+const vwBbox=f=>{let a=1e9,b=-1e9,c=1e9,d=-1e9;for(let i=0;i<f.length;i+=2){a=Math.min(a,f[i]);b=Math.max(b,f[i]);c=Math.min(c,f[i+1]);d=Math.max(d,f[i+1]);}return[a,b,c,d];};
+const vwPip=(x,z,f)=>{let c=false;for(let i=0,j=f.length-2;i<f.length;j=i,i+=2){const xi=f[i],zi=f[i+1],xj=f[j],zj=f[j+1];if((zi>z)!==(zj>z)&&x<(xj-xi)*(z-zi)/(zj-zi)+xi)c=!c;}return c;};
+function vwCfg(){const w=window.__VW;if(w&&w.key)return{key:w.key,domain:w.domain||location.origin};let k='';try{k=localStorage.getItem('town3d.vworldKey')||'';}catch(e){}return k?{key:k,domain:location.origin}:null;}
+const vwProp=(p,...names)=>{for(const n of names){for(const k of[n,n.toUpperCase(),n.toLowerCase()])if(p[k]!=null&&p[k]!=='')return p[k];}return null;};
+async function vwPage(cfg,box,page,sig){const u=VW_API+'?service=data&version=2.0&request=GetFeature&data=LT_C_BLDGINFO&format=json&errorFormat=json&size=1000&page='+page+
+    '&geometry=true&attribute=true&crs=EPSG:4326&geomFilter=BOX('+box.join(',')+')&key='+encodeURIComponent(cfg.key)+'&domain='+encodeURIComponent(cfg.domain);
+  const r=await fetchT(u,30000,sig),j=await r.json(),R=j.response||{};
+  if(R.status==='NOT_FOUND')return{feats:[],pages:0};if(R.status!=='OK')throw new Error('V-World '+(R.status||'')+' '+((R.error&&(R.error.text||R.error.code))||''));
+  return{feats:(R.result&&R.result.featureCollection&&R.result.featureCollection.features)||[],pages:+(R.page&&R.page.total)||1};}
+async function enrichFloors(D,ctx,ui){const cfg=vwCfg();if(!cfg||ctx.R>5000)return 0;const{lat0,lon0,KX,KZ,R}=ctx,UI=ui?loadUI:{t(){},p(){}};
+  /* 1.5 km 칸으로 나눠 요청(칸마다 1000건씩 페이지) */
+  const step=1500,boxes=[];for(let x=-R;x<R;x+=step)for(let z=-R;z<R;z+=step){if(Math.hypot(Math.max(Math.abs(x),Math.abs(x+step))-step/2,Math.max(Math.abs(z),Math.abs(z+step))-step/2)>R+step)continue;
+    boxes.push([lon0+x/KX,lat0-(z+step)/KZ,lon0+(x+step)/KX,lat0-z/KZ]);}
+  const VW=[],seen=new Set();let done=0,err=null;
+  const work=async b=>{for(let p=1,P=1;p<=P&&p<=20;p++){const{feats,pages}=await vwPage(cfg,b,p);P=pages;
+      for(const f of feats){const pr=f.properties||{},g=f.geometry;if(!g)continue;const id=vwProp(pr,'gis_idntfc_no','bld_mnnm','id')+'|'+JSON.stringify(g.coordinates).slice(0,60);if(seen.has(id))continue;seen.add(id);
+        const fl=+vwProp(pr,'grnd_flr','gro_flo_co','grnd_flr_cnt')||0,h=+vwProp(pr,'height','bld_hgt')||0;if(!fl&&!h)continue;
+        const polys=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];
+        const use=Object.values(pr).filter(v=>typeof v==='string').join(' ');
+        for(const pg of polys){const ring=pg[0];if(!ring||ring.length<4)continue;const f2=[];for(const[lo,la]of ring)f2.push((lo-lon0)*KX,(lat0-la)*KZ);
+          let cx=0,cz=0;for(let i=0;i<f2.length;i+=2){cx+=f2[i];cz+=f2[i+1];}cx/=f2.length/2;cz/=f2.length/2;VW.push({f:f2,cx,cz,fl,h,apt:/공동주택|아파트/.test(use)});}}}
+    done++;UI.t(`건축물대장 층수 받는 중 (${done}/${boxes.length}) · ${VW.length.toLocaleString()}동`);};
+  let next=0;await Promise.all(Array.from({length:4},async()=>{while(next<boxes.length){const b=boxes[next++];try{await work(b);}catch(e){err=e;done++;}}}));
+  if(!VW.length){if(err)console.warn('층수 보강 실패:',err.message);D.floorsErr=err?err.message:'';return 0;}
+  const G=new Map(),C=120,gk=(x,z)=>Math.floor(x/C)+','+Math.floor(z/C);for(const v of VW){const bb=vwBbox(v.f);v.bb=bb;for(let x=Math.floor(bb[0]/C);x<=Math.floor(bb[1]/C);x++)for(let z=Math.floor(bb[2]/C);z<=Math.floor(bb[3]/C);z++){const k=x+','+z;let l=G.get(k);if(!l)G.set(k,l=[]);l.push(v);}}
+  const at=(x,z)=>G.get(gk(x,z))||[];
+  let n=0;for(const b of D.B){if(b[8])continue;const f=b[3];let cx=0,cz=0;for(let i=0;i<f.length;i+=2){cx+=f[i];cz+=f[i+1];}cx/=f.length/2;cz/=f.length/2;
+    let best=null;for(const v of at(cx,cz)){if(cx<v.bb[0]||cx>v.bb[1]||cz<v.bb[2]||cz>v.bb[3])continue;if(vwPip(cx,cz,v.f)&&(!best||v.fl>best.fl))best=v;}
+    if(!best){const bb=vwBbox(f);for(const v of at(cx,cz))if(v.cx>bb[0]&&v.cx<bb[1]&&v.cz>bb[2]&&v.cz<bb[3]&&vwPip(v.cx,v.cz,f)&&(!best||v.fl>best.fl))best=v;}
+    if(!best)continue;if(best.fl)b[1]=best.fl;if(best.h>=3&&best.h<700&&(!best.fl||best.h/best.fl>2&&best.h/best.fl<6))b[4]=best.h;else if(best.fl&&!(b[4]>0))b[4]=0;
+    if(best.apt&&(b[0]==='y'||b[0]==='v'))b[0]='a';n++;}
+  D.floors={src:'vworld',n,at:new Date().toISOString().slice(0,10)};return n;}
 /* 노선색: OSM colour 태그 → 없으면 수도권 노선 이름으로 */
 const SEOUL_LINES=[[/1호선|Line 1\b/i,0x0052A4],[/2호선|Line 2\b/i,0x00A84D],[/3호선|Line 3\b/i,0xEF7C1C],[/4호선|Line 4\b/i,0x00A5DE],[/5호선|Line 5\b/i,0x996CAC],[/6호선|Line 6\b/i,0xCD7C2F],
   [/7호선|Line 7\b/i,0x747F00],[/8호선|Line 8\b/i,0xE6186C],[/9호선|Line 9\b/i,0xBDB092],[/신분당/,0xD4003B],[/경의|중앙선/,0x77C4A3],[/수인|분당선/,0xFABE00],[/공항철도|AREX/i,0x0090D2],[/경춘/,0x0C8E72],[/우이신설/,0xB0CE18],[/신림선/,0x6789CA],[/GTX-?A/i,0x9A6292]];
 function lineColor(t){const c=String(t.colour||t.color||'').trim();if(/^#?[0-9a-fA-F]{6}$/.test(c))return parseInt(c.replace('#',''),16);
   const s=(t.ref||'')+' '+(t.name||'')+' '+(t['name:ko']||'');for(const[re,col]of SEOUL_LINES)if(re.test(s))return col;return 0;}
 
+try{$id('vwKey').value=localStorage.getItem('town3d.vworldKey')||'';}catch(e){}
+$id('vwSave').onclick=()=>{const k=$id('vwKey').value.trim();try{if(k)localStorage.setItem('town3d.vworldKey',k);else localStorage.removeItem('town3d.vworldKey');$id('vwMsg').textContent=k?'저장했습니다. 다음에 주소로 만들 때부터 건축물대장 층수를 씁니다.':'키를 지웠습니다.';}catch(e){$id('vwMsg').textContent='이 화면에서는 키를 저장할 수 없습니다.';}};
 $id('addrIn').value=qAddr;if(qAddr)$id('radIn').value=String(qR);
 $id('addrForm').addEventListener('submit',async e=>{e.preventDefault();const a=$id('addrIn').value.trim(),r=$id('radIn').value,msg=$id('addrMsg');if(!a)return;
   msg.style.color='';msg.textContent='주소 검색 서버에 연결하는 중…';

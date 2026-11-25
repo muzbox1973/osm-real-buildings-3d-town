@@ -28,6 +28,8 @@ const server = http.createServer((req, res) => {
 const browser = await chromium.launch();
 async function run(src, timeout) {
   const page = await browser.newPage();
+  // 건축물대장 층수(브이월드 GIS건물통합정보): 키가 있으면 앱의 enrichFloors 가 사용 — URL·로그에 키를 남기지 않음
+  if (process.env.VWORLD_KEY) await page.addInitScript(([key, domain]) => { window.__VW = { key, domain }; }, [process.env.VWORLD_KEY, process.env.VWORLD_DOMAIN || 'https://muzbox1973.github.io']);
   page.on('console', m => { if (m.type() === 'error') console.log('[page]', m.text()); });
   const url = `http://localhost:8765/index.html?addr=${encodeURIComponent(ADDR)}&r=${RKM}&dump=1&src=${src}`;
   console.log('open', url);
@@ -53,4 +55,4 @@ const D = JSON.parse(out);
 D.baked = { at: new Date().toISOString(), src: used, addr: ADDR, r: +RKM };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, '/* 롯데월드타워 반경 5 km · © OpenStreetMap 기여자 (ODbL) · tools/bake.mjs 로 생성 */\nwindow.TOWN3D_BAKED=' + JSON.stringify(D) + ';\n');
-console.log(`saved ${OUT} (${used}) buildings=${D.B.length} roads=${D.H.length} rail=${D.RLW.length} bytes=${fs.statSync(OUT).size}`);
+console.log(`saved ${OUT} (${used}) floors=${D.floors ? D.floors.n : 'none'}${D.floorsErr ? ' err=' + D.floorsErr : ''} buildings=${D.B.length} roads=${D.H.length} rail=${D.RLW.length} bytes=${fs.statSync(OUT).size}`);
