@@ -244,6 +244,17 @@ const roofCache={},roofOf=c=>roofCache[c]||(roofCache[c]=new THREE.MeshLambertMa
 const OCOL={a:[0xf0ede6,0xeef1f4,0xf3ece2,0xe9eef3],c:cc,s:[0xf0ebe0,0xe9e2d3],h:[0xeef0f2],i:[0xd9dde0,0xcfd5da,0xe1ddd5],d:[0xf2ece1,0xe6e0d4,0xefe3cf,0xf4efe8],v:[0xeee6da,0xe2ddd6,0xd9d2c7],g:[0xe8e0d0],y:cc};
 const OROOF={a:[0x8a9aa3,0x5f7f96,0x9b6b54,0x3f6f8f,0x6f8a6a],d:[0x9b5a43,0x5f7f8c,0x7a6e62,0xb07a4e,0x6c8a5a],i:[0x6f98b0,0x9aa3ad,0x8d6e63]};
 function osmFloors(t,lv,ar){if(lv)return lv;return t==='a'?15:t==='c'?(ar>2500?5:4):t==='s'?4:t==='h'?7:t==='i'?2:t==='d'?2:t==='v'?4:t==='g'?2:t==='p'?3:ar<100?1:ar<400?2:3;}
+/* 아파트 판별: 건물 종류가 'yes'·'residential'뿐이거나 이름이 동 번호뿐인 아파트 동을 찾아 'a'로 → 층수 정보가 없으면 15층 */
+const APT_RE=/아파트|apt|단지|자이|래미안|푸르지오|힐스테이트|e\s*편한|이편한|아이파크|캐슬|더샵|센트레빌|리센츠|엘스|파크리오|트리지움|레이크팰리스|헬리오시티|주공|타워팰리스|위브|sk\s*뷰|꿈에그린|스위트닷홈|하이츠|맨션|팰리스|써밋|아크로|디에이치|렉슬|롯데캐슬|베라체|리버|더힐|포레/i,
+  FAC_RE=/상가|관리|경로당|도서관|체육관|어린이집|유치원|주민|센터|교회|빌딩|주차|경비|커뮤니티|복지|학교|마트|은행|우체국|파출소|지구대|정자|창고/,
+  BLK_RE=/^(제?\s*\d{1,4}\s*동?|[a-z]\s*동|\d+-\d+|\d+동\s*\(.*\))$/i;
+{const res=A.filter(a=>a[0]==='residential').map(a=>({f:a[2],bb:bbox(a[2]),nm:a[1]||'',ar:areaOf(a[2]),b:[]})),rg=Grid(200);res.forEach(r=>rg.add(r.bb,r));
+  const cand=b=>!b[8]&&!b[4]&&!b[1]&&(b[0]==='y'||b[0]==='v');
+  for(const b of B){const F=footFrame(b[3]),ar=areaOf(b[3]);b.__ar=ar;for(const r of rg.at(F.cx,F.cz))if(r.bb[0]<=F.cx&&F.cx<=r.bb[1]&&r.bb[2]<=F.cz&&F.cz<=r.bb[3]&&pip(F.cx,F.cz,r.f)){r.b.push(b);break;}}
+  for(const r of res){const big=r.b.filter(b=>b.__ar>=350&&b.__ar<=4000&&!b[8]),known=r.b.some(b=>b[0]==='a'||(b[1]||0)>=8||(b[4]||0)>=24);
+    const complex=APT_RE.test(r.nm)||known||(r.ar>8000&&big.length>=4&&big.length>=r.b.filter(b=>!b[8]).length*.5);
+    if(!complex)continue;for(const b of r.b)if(cand(b)&&b.__ar>=250&&!FAC_RE.test(b[2]||''))b[0]='a';}
+  for(const b of B)if(cand(b)&&b.__ar>=250&&(BLK_RE.test((b[2]||'').trim())||APT_RE.test(b[2]||'')&&!FAC_RE.test(b[2])))b[0]='a';}
 const angD2=(a,b)=>{let d=b-a;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;return d;};
 /* ===== 랜드마크 · 철도/지하철 (OSM 모드) ===== */
 const rBatch=new Map();
