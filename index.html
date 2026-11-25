@@ -689,7 +689,16 @@ function placeLabels(){const w=wrap.clientWidth,h=wrap.clientHeight,occ=[],cam=c
   for(const l of labels)if(l.on&&!shown.has(l)){l.el.style.display='none';l.on=false;}}
 /* 조작 */
 function view(p,t){camera.position.set(...p);controls.target.set(...t);controls.update();}
-function home(){const k=wrap.clientWidth/wrap.clientHeight<1?1.7:1,d=RAD*k;view([-.25*d,1.35*d,1.5*d],[0,0,0]);}
+/* 처음 시점: 반경 전체(원)가 화면에, 왼쪽 안내 카드에 가리지 않게 들어오도록 거리와 위치를 계산 */
+function home(){const W=wrap.clientWidth||1,Hh=wrap.clientHeight||1,dir=new THREE.Vector3(-.25,1.35,1.5).normalize(),R=RAD||600;
+  const card=document.querySelector('.card'),cr=card&&W>760?card.getBoundingClientRect().right/W*2-1+.04:-.96,lo=Math.min(.2,cr),hw=(.96-lo)/2,cx=(.96+lo)/2;
+  const c=new THREE.PerspectiveCamera(camera.fov,W/Hh,1,R*40),pts=[];for(let i=0;i<64;i++){const a=i/64*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*R,0,Math.sin(a)*R));}
+  const ext=d=>{c.position.copy(dir).multiplyScalar(d);c.lookAt(0,0,0);c.updateMatrixWorld();let x0=9,x1=-9,y0=9,y1=-9;for(const q of pts){const v=q.clone().project(c);x0=Math.min(x0,v.x);x1=Math.max(x1,v.x);y0=Math.min(y0,v.y);y1=Math.max(y1,v.y);}return[x0,x1,y0,y1];};
+  let a=R*.5,b=R*12;for(let i=0;i<40;i++){const m=(a+b)/2,[x0,x1,y0,y1]=ext(m);(x1-x0)/2<=hw&&(y1-y0)/2<=.9?b=m:a=m;}
+  const[x0,x1,y0,y1]=ext(b),d=b,th=Math.tan(c.fov*Math.PI/360),right=new THREE.Vector3().setFromMatrixColumn(c.matrixWorld,0),up=new THREE.Vector3().setFromMatrixColumn(c.matrixWorld,1);
+  /* 원의 중심을 빈 영역 가운데로: 화면 좌표 이동량만큼 시점을 반대로 옮긴다 */
+  const sx=(cx-(x0+x1)/2)*d*th*c.aspect,sy=(0-(y0+y1)/2)*d*th,off=right.multiplyScalar(-sx).add(up.multiplyScalar(-sy));off.y=0;
+  view([dir.x*d+off.x,dir.y*d,dir.z*d+off.z],[off.x,0,off.z]);}
 function setNight(n){night=n;const bg=n?0x0c1322:0xcfdfea;scene.background.set(bg);scene.fog.color.set(bg);document.body.style.background=n?'#0c1322':'#cfdfea';
   hemi.intensity=n?.28:.6;hemi.color.set(n?0x6d7fa8:0xe3ecf6);sun.intensity=n?.2:.72;sun.color.set(n?0x9fb4ff:0xfff1dc);
   Object.values(winMats).forEach(m=>m.emissiveIntensity=n?1.15:0);lmMats.forEach(m=>m.emissiveIntensity=n?(m.map?.75:1):0);headM.emissiveIntensity=tailM.emissiveIntensity=n?1.4:0;}
@@ -946,7 +955,7 @@ function drawMini(p,h){const S=mini.width,c=mctx,sc=S/2/260;c.setTransform(1,0,0
 
 const clock=new THREE.Clock();
 function frame(){const raw=Math.min(clock.getDelta(),.05),dt=raw*motion;
-  if((npT+=raw)>.4){npT=0;try{npcRecycle(false);}catch(e){}}const sdt=dt*(ego.on?ego.mult:1);simT+=raw*(ego.on?ego.mult:1);{const dd=camera.position.distanceTo(controls.target),k=ego.on&&ego.view!=='free'?1:Math.max(1,Math.min(3,dd/500));if(Math.abs(k-VSC)>.05){VSC=k;/* 차는 차선 폭(약 3.2m)을 넘지 않게 최대 1.6배 */const kc=Math.min(1.6,k);for(const c of cars)c.m.scale.setScalar(kc);if(ego.car)ego.car.scale.setScalar(ego.view==='free'?kc:1);}}
+  if((npT+=raw)>.4){npT=0;try{npcRecycle(false);}catch(e){}}if(OSM){const dd=camera.position.distanceTo(controls.target);scene.fog.near=Math.max(RAD*1.6,dd+RAD*.7);scene.fog.far=scene.fog.near+RAD*4;}const sdt=dt*(ego.on?ego.mult:1);simT+=raw*(ego.on?ego.mult:1);{const dd=camera.position.distanceTo(controls.target),k=ego.on&&ego.view!=='free'?1:Math.max(1,Math.min(3,dd/500));if(Math.abs(k-VSC)>.05){VSC=k;/* 차는 차선 폭(약 3.2m)을 넘지 않게 최대 1.6배 */const kc=Math.min(1.6,k);for(const c of cars)c.m.scale.setScalar(kc);if(ego.car)ego.car.scale.setScalar(ego.view==='free'?kc:1);}}
   updateSignals();npcStep(sdt);railStep(simT);
   updateDrive(raw);if(!ego.on||ego.view==='free')controls.update();renderer.render(scene,camera);placeLabels();cmp.style.transform=`rotate(${controls.getAzimuthalAngle()}rad)`;
   requestAnimationFrame(frame);}
