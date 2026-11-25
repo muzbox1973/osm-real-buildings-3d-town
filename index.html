@@ -254,7 +254,9 @@ const APT_RE=/아파트|apt|단지|자이|래미안|푸르지오|힐스테이트
   for(const r of res){const big=r.b.filter(b=>b.__ar>=350&&b.__ar<=4000&&!b[8]),known=r.b.some(b=>b[0]==='a'||(b[1]||0)>=8||(b[4]||0)>=24);
     const complex=APT_RE.test(r.nm)||known||(r.ar>8000&&big.length>=4&&big.length>=r.b.filter(b=>!b[8]).length*.5);
     if(!complex)continue;for(const b of r.b)if(cand(b)&&b.__ar>=250&&!FAC_RE.test(b[2]||''))b[0]='a';}
-  for(const b of B)if(cand(b)&&b.__ar>=250&&(BLK_RE.test((b[2]||'').trim())||APT_RE.test(b[2]||'')&&!FAC_RE.test(b[2])))b[0]='a';}
+  for(const b of B)if(cand(b)&&b.__ar>=250&&(BLK_RE.test((b[2]||'').trim())||APT_RE.test(b[2]||'')&&!FAC_RE.test(b[2])))b[0]='a';
+  /* 판상형 아파트 동 모양(폭 10~22 m, 길이 35 m 이상, 길이/폭 2.2 이상) */
+  for(const b of B){if(!cand(b)||FAC_RE.test(b[2]||''))continue;const F=footFrame(b[3]),w=2*Math.min(F.mu,F.mv),l=2*Math.max(F.mu,F.mv);if(w>=10&&w<=22&&l>=35&&l/w>=2.2&&b.__ar>=0.75*w*l)b[0]='a';}}
 const angD2=(a,b)=>{let d=b-a;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;return d;};
 /* ===== 랜드마크 · 철도/지하철 (OSM 모드) ===== */
 const rBatch=new Map();
